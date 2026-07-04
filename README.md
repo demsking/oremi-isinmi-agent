@@ -12,7 +12,7 @@ meaning "my friend", and _Isinmi_, meaning "rest" or "appointment". Together,
 the name conveys the idea of a friendly assistant that helps you manage your
 time and commitments efficiently, bringing calm and order to your daily life.
 
-![Oremi Isinmi Agent Logo](doc/logo.jpg)
+![Oremi Isinmi Agent Logo](htdocs/logo.jpg)
 
 ## Documentation
 
