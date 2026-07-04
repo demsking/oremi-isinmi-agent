@@ -28,7 +28,7 @@ from pydantic import model_validator
 class StrictModel(BaseModel):
   """Base model with strict validation and assignment checks."""
 
-  model_config = ConfigDict(strict=True, validate_assignment=True, extra="forbid")
+  model_config = ConfigDict(strict=True, validate_assignment=True, extra="forbid", from_attributes=True)
 
   @model_validator(mode="before")
   @classmethod

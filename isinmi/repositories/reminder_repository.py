@@ -16,37 +16,47 @@ from __future__ import annotations
 
 from datetime import datetime
 from datetime import timedelta
-from typing import Any
+
+from sqlalchemy import select
 
 from isinmi.core.database import Database
-from isinmi.core.database import tags_filter_sql
 from isinmi.core.models import Reminder
-from isinmi.repositories.base import encode_value
-from isinmi.repositories.base import placeholders
+from isinmi.core.orm import ReminderORM
+from isinmi.repositories.base import build_tags_filter
 
 
 class ReminderRepository:
-  """Encrypted persistence for reminders."""
+  """ORM persistence for reminders."""
 
   def __init__(self, db: Database) -> None:
     self.db = db
 
   async def create(self, reminder: Reminder) -> Reminder:
-    data = reminder.model_dump()
-    columns = list(data)
-    values = [encode_value(data[column]) for column in columns]
+    def _operation(session):
+      record = ReminderORM(
+        id=reminder.id,
+        title=reminder.title,
+        description=reminder.description,
+        datetime=reminder.datetime,
+        recurring=reminder.recurring,
+        tags=reminder.tags,
+        status=reminder.status,
+        created_at=reminder.created_at,
+        notified_at=reminder.notified_at,
+      )
+      session.add(record)
+      session.flush()
+      return record
 
-    await self.db.execute(
-      f"INSERT INTO reminders ({','.join(columns)}) VALUES ({placeholders(values)})",
-      tuple(values),
-    )
-
-    return reminder
+    record = await self.db.run(_operation)
+    return Reminder.model_validate(record)
 
   async def get(self, reminder_id: str) -> Reminder | None:
-    row = await self.db.fetch_one("SELECT * FROM reminders WHERE id = ?", (reminder_id,))
+    def _operation(session):
+      return session.get(ReminderORM, reminder_id)
 
-    return Reminder.model_validate(row) if row else None
+    record = await self.db.run(_operation)
+    return Reminder.model_validate(record) if record else None
 
   async def list(
     self,
@@ -57,57 +67,59 @@ class ReminderRepository:
     limit: int = 100,
     offset: int = 0,
   ) -> list[Reminder]:
-    where: list[str] = []
-    params: list[Any] = []
+    def _operation(session):
+      stmt = select(ReminderORM)
 
-    if status:
-      where.append("status = ?")
-      params.append(status)
+      if status:
+        stmt = stmt.where(ReminderORM.status == status)
 
-    if start:
-      where.append("datetime >= ?")
-      params.append(start.isoformat())
+      if start is not None:
+        stmt = stmt.where(ReminderORM.datetime >= start)
 
-    if end:
-      where.append("datetime <= ?")
-      params.append(end.isoformat())
+      if end is not None:
+        stmt = stmt.where(ReminderORM.datetime <= end)
 
-    if tags:
-      sql, tag_params = tags_filter_sql(tags)
-      where.append(sql)
-      params.extend(tag_params)
+      tag_filter = build_tags_filter(ReminderORM.tags, tags or [], session.bind.dialect.name)
+      if tag_filter is not None:
+        stmt = stmt.where(tag_filter)
 
-    clause = f"WHERE {' AND '.join(where)}" if where else ""
-    rows = await self.db.fetch_all(
-      f"SELECT * FROM reminders {clause} ORDER BY datetime ASC LIMIT ? OFFSET ?",
-      tuple(params + [limit, offset]),
-    )
+      stmt = stmt.order_by(ReminderORM.datetime.asc()).limit(limit).offset(offset)
+      return session.scalars(stmt).all()
 
+    rows = await self.db.run(_operation)
     return [Reminder.model_validate(row) for row in rows]
 
   async def upcoming(self) -> list[Reminder]:
     now = datetime.now()
-
     return await self.list(status="pending", start=now, end=now + timedelta(hours=24), limit=200)
 
-  async def update(self, reminder_id: str, changes: dict[str, Any]) -> Reminder | None:
-    if not changes:
-      return await self.get(reminder_id)
+  async def update(self, reminder_id: str, changes: dict[str, object]) -> Reminder | None:
+    def _operation(session):
+      record = session.get(ReminderORM, reminder_id)
 
-    assignments = [f"{key} = ?" for key in changes]
-    values = [encode_value(value) for value in changes.values()]
+      if record is None:
+        return None
 
-    await self.db.execute(
-      f"UPDATE reminders SET {', '.join(assignments)} WHERE id = ?",
-      tuple(values + [reminder_id]),
-    )
+      for key, value in changes.items():
+        setattr(record, key, value)
 
-    return await self.get(reminder_id)
+      session.flush()
+      return record
+
+    record = await self.db.run(_operation)
+    return Reminder.model_validate(record) if record else None
 
   async def complete(self, reminder_id: str) -> Reminder | None:
     return await self.update(reminder_id, {"status": "completed"})
 
   async def delete(self, reminder_id: str) -> bool:
-    await self.db.execute("DELETE FROM reminders WHERE id = ?", (reminder_id,))
+    def _operation(session):
+      record = session.get(ReminderORM, reminder_id)
 
-    return True
+      if record is None:
+        return False
+
+      session.delete(record)
+      return True
+
+    return await self.db.run(_operation)

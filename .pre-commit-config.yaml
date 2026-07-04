@@ -95,9 +95,6 @@ repos:
       - id: python-no-eval
         name: "Disallow Python eval"
         description: "Prevents use of the dangerous `eval` function in Python."
-      - id: python-no-log-warn
-        name: "Disallow Deprecated log.warn"
-        description: "Prevents use of deprecated `log.warn` in favor of `log.warning`."
       - id: python-use-type-annotations
         name: "Enforce Type Annotations"
         description: "Ensures Python functions and methods use type annotations."

@@ -15,37 +15,49 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+
+from sqlalchemy import select
 
 from isinmi.core.database import Database
-from isinmi.core.database import tags_filter_sql
 from isinmi.core.models import Event
-from isinmi.repositories.base import encode_value
-from isinmi.repositories.base import placeholders
+from isinmi.core.orm import EventORM
+from isinmi.repositories.base import build_tags_filter
 
 
 class EventRepository:
-  """Encrypted persistence for events."""
+  """ORM persistence for events."""
 
   def __init__(self, db: Database) -> None:
     self.db = db
 
   async def create(self, event: Event) -> Event:
-    data = event.model_dump()
-    columns = list(data)
-    values = [encode_value(data[column]) for column in columns]
+    def _operation(session):
+      record = EventORM(
+        id=event.id,
+        title=event.title,
+        description=event.description,
+        start_datetime=event.start_datetime,
+        end_datetime=event.end_datetime,
+        location=event.location,
+        attendees=event.attendees,
+        tags=event.tags,
+        reminders=event.reminders,
+        status=event.status,
+        created_at=event.created_at,
+      )
+      session.add(record)
+      session.flush()
+      return record
 
-    await self.db.execute(
-      f"INSERT INTO events ({','.join(columns)}) VALUES ({placeholders(values)})",
-      tuple(values),
-    )
-
-    return event
+    record = await self.db.run(_operation)
+    return Event.model_validate(record)
 
   async def get(self, event_id: str) -> Event | None:
-    row = await self.db.fetch_one("SELECT * FROM events WHERE id = ?", (event_id,))
+    def _operation(session):
+      return session.get(EventORM, event_id)
 
-    return Event.model_validate(row) if row else None
+    record = await self.db.run(_operation)
+    return Event.model_validate(record) if record else None
 
   async def list(
     self,
@@ -56,49 +68,52 @@ class EventRepository:
     limit: int = 100,
     offset: int = 0,
   ) -> list[Event]:
-    where: list[str] = []
-    params: list[Any] = []
+    def _operation(session):
+      stmt = select(EventORM)
 
-    if status:
-      where.append("status = ?")
-      params.append(status)
+      if status:
+        stmt = stmt.where(EventORM.status == status)
 
-    if start:
-      where.append("start_datetime >= ?")
-      params.append(start.isoformat())
+      if start is not None:
+        stmt = stmt.where(EventORM.start_datetime >= start)
 
-    if end:
-      where.append("start_datetime <= ?")
-      params.append(end.isoformat())
+      if end is not None:
+        stmt = stmt.where(EventORM.start_datetime <= end)
 
-    if tags:
-      sql, tag_params = tags_filter_sql(tags)
-      where.append(sql)
-      params.extend(tag_params)
+      tag_filter = build_tags_filter(EventORM.tags, tags or [], session.bind.dialect.name)
+      if tag_filter is not None:
+        stmt = stmt.where(tag_filter)
 
-    clause = f"WHERE {' AND '.join(where)}" if where else ""
-    rows = await self.db.fetch_all(
-      f"SELECT * FROM events {clause} ORDER BY start_datetime ASC LIMIT ? OFFSET ?",
-      tuple(params + [limit, offset]),
-    )
+      stmt = stmt.order_by(EventORM.start_datetime.asc()).limit(limit).offset(offset)
+      return session.scalars(stmt).all()
 
+    rows = await self.db.run(_operation)
     return [Event.model_validate(row) for row in rows]
 
-  async def update(self, event_id: str, changes: dict[str, Any]) -> Event | None:
-    if not changes:
-      return await self.get(event_id)
+  async def update(self, event_id: str, changes: dict[str, object]) -> Event | None:
+    def _operation(session):
+      record = session.get(EventORM, event_id)
 
-    assignments = [f"{key} = ?" for key in changes]
-    values = [encode_value(value) for value in changes.values()]
+      if record is None:
+        return None
 
-    await self.db.execute(
-      f"UPDATE events SET {', '.join(assignments)} WHERE id = ?",
-      tuple(values + [event_id]),
-    )
+      for key, value in changes.items():
+        setattr(record, key, value)
 
-    return await self.get(event_id)
+      session.flush()
+      return record
+
+    record = await self.db.run(_operation)
+    return Event.model_validate(record) if record else None
 
   async def delete(self, event_id: str) -> bool:
-    await self.db.execute("DELETE FROM events WHERE id = ?", (event_id,))
+    def _operation(session):
+      record = session.get(EventORM, event_id)
 
-    return True
+      if record is None:
+        return False
+
+      session.delete(record)
+      return True
+
+    return await self.db.run(_operation)

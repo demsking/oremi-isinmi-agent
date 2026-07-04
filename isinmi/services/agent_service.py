@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import json
 import logging
 import re
 from datetime import datetime
@@ -22,13 +21,13 @@ from pydantic_ai import Agent
 from pydantic_ai.agent import AgentModelSettings
 
 from isinmi.core.database import Database
-from isinmi.core.database import json_dumps
 from isinmi.core.models import AgentAction
 from isinmi.core.models import AgentChatRequest
 from isinmi.core.models import clean_tags
 from isinmi.core.models import new_id
 from isinmi.core.models import ReminderCreate
 from isinmi.core.models import TagsRequest
+from isinmi.core.orm import AgentConversationORM
 from isinmi.core.settings import Settings
 from isinmi.services.reminder_service import ReminderService
 
@@ -47,7 +46,6 @@ class AgentService:
   def _build_agent(self):
     """Build an agent for the configured backend."""
 
-    model_name = self.settings.resolve_ollama_model_name()
     model_settings: AgentModelSettings = {
       "temperature": self.settings.llm_temperature,
       "thinking": False,
@@ -55,6 +53,9 @@ class AgentService:
     }
 
     if self.settings.uses_ollama():
+      if not self.settings.ollama_base_url:
+        raise RuntimeError("OREMI_ISINMI_OLLAMA_BASE_URL is required when llm_model uses ollama")
+
       from pydantic_ai.models.ollama import OllamaModel  # pylint: disable=import-outside-toplevel
       from pydantic_ai.providers.ollama import OllamaProvider  # pylint: disable=import-outside-toplevel
 
@@ -70,7 +71,7 @@ class AgentService:
       )
 
     return Agent(
-      model=model_name,
+      model=self.settings.llm_model,
       system_prompt=self.settings.llm_system_prompt,
       output_type=AgentAction,
       model_settings=model_settings,
@@ -201,20 +202,18 @@ class AgentService:
     return suggestions
 
   async def _save_conversation(self, request: AgentChatRequest, action: AgentAction) -> None:
-    await self.db.execute(
-      """
-      INSERT INTO agent_conversations
-      (id, message, response, action_type, entity_type, tags, context, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      """,
-      (
-        new_id(),
-        request.message,
-        action.response_message,
-        action.action_type,
-        action.entity_type,
-        json_dumps(action.tags),
-        json.dumps(request.context, default=str),
-        datetime.now().isoformat(),
-      ),
-    )
+    def _operation(session):
+      session.add(
+        AgentConversationORM(
+          id=new_id(),
+          message=request.message,
+          response=action.response_message,
+          action_type=action.action_type,
+          entity_type=action.entity_type,
+          tags=action.tags,
+          context=request.context,
+          created_at=datetime.now(),
+        )
+      )
+
+    await self.db.run(_operation)

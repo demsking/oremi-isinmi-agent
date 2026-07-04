@@ -103,7 +103,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     if resolved_settings.uses_ollama():
       await _pull_ollama_model(resolved_settings)
 
-    yield
+    try:
+      yield
+    finally:
+      await db.dispose()
 
   app = FastAPI(
     docs_url=None,

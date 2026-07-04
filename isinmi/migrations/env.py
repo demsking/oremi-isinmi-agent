@@ -16,42 +16,42 @@ from logging.config import fileConfig
 
 from alembic import context
 
-from isinmi.core.database import database_path
+from isinmi.core.database import Database
+from isinmi.core.orm import Base
 from isinmi.core.settings import get_settings
 
 config = context.config
 if config.config_file_name is not None:
   fileConfig(config.config_file_name)
 
-target_metadata = None
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
   settings = get_settings()
-  context.configure(url=f"sqlite:///{database_path(settings.database_url)}", literal_binds=True)
+  context.configure(
+    url=settings.database_url,
+    target_metadata=target_metadata,
+    literal_binds=True,
+    compare_type=True,
+  )
 
   with context.begin_transaction():
     context.run_migrations()
 
 
 def run_migrations_online() -> None:
-  try:
-    import sqlcipher3 as sqlite
-  except ImportError as exc:
-    raise RuntimeError("sqlcipher3 is required to run migrations") from exc
-
   settings = get_settings()
-  conn = sqlite.connect(str(database_path(settings.database_url)))
-  key = settings.database_encryption_key.get_secret_value().replace("'", "''")
-
-  conn.execute(f"PRAGMA key = '{key}'")
-  context.configure(connection=conn)
+  database = Database(settings)
 
   try:
-    with context.begin_transaction():
-      context.run_migrations()
+    with database.engine.connect() as connection:
+      context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
+
+      with context.begin_transaction():
+        context.run_migrations()
   finally:
-    conn.close()
+    database.engine.dispose()
 
 
 if context.is_offline_mode():

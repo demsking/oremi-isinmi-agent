@@ -15,32 +15,40 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+
+from sqlalchemy import func
+from sqlalchemy import select
 
 from isinmi.core.database import Database
-from isinmi.core.database import tags_filter_sql
 from isinmi.core.models import Notification
-from isinmi.repositories.base import encode_value
-from isinmi.repositories.base import placeholders
+from isinmi.core.orm import NotificationORM
+from isinmi.repositories.base import build_tags_filter
 
 
 class NotificationRepository:
-  """Encrypted persistence for notifications."""
+  """ORM persistence for notifications."""
 
   def __init__(self, db: Database) -> None:
     self.db = db
 
   async def create(self, notification: Notification) -> Notification:
-    data = notification.model_dump()
-    columns = list(data)
-    values = [encode_value(data[column]) for column in columns]
+    def _operation(session):
+      record = NotificationORM(
+        id=notification.id,
+        type=notification.type,
+        message=notification.message,
+        entity_id=notification.entity_id,
+        tags=notification.tags,
+        timestamp=notification.timestamp,
+        read_status=notification.read_status,
+        read_at=notification.read_at,
+      )
+      session.add(record)
+      session.flush()
+      return record
 
-    await self.db.execute(
-      f"INSERT INTO notifications ({','.join(columns)}) VALUES ({placeholders(values)})",
-      tuple(values),
-    )
-
-    return notification
+    record = await self.db.run(_operation)
+    return Notification.model_validate(record)
 
   async def list(
     self,
@@ -50,50 +58,54 @@ class NotificationRepository:
     limit: int = 100,
     offset: int = 0,
   ) -> list[Notification]:
-    where: list[str] = []
-    params: list[Any] = []
+    def _operation(session):
+      stmt = select(NotificationORM)
 
-    if type_:
-      where.append("type = ?")
-      params.append(type_)
+      if type_:
+        stmt = stmt.where(NotificationORM.type == type_)
 
-    if read_status is not None:
-      where.append("read_status = ?")
-      params.append(int(read_status))
+      if read_status is not None:
+        stmt = stmt.where(NotificationORM.read_status == read_status)
 
-    if tags:
-      sql, tag_params = tags_filter_sql(tags)
-      where.append(sql)
-      params.extend(tag_params)
+      tag_filter = build_tags_filter(NotificationORM.tags, tags or [], session.bind.dialect.name)
+      if tag_filter is not None:
+        stmt = stmt.where(tag_filter)
 
-    clause = f"WHERE {' AND '.join(where)}" if where else ""
-    rows = await self.db.fetch_all(
-      f"SELECT * FROM notifications {clause} ORDER BY timestamp DESC LIMIT ? OFFSET ?",
-      tuple(params + [limit, offset]),
-    )
+      stmt = stmt.order_by(NotificationORM.timestamp.desc()).limit(limit).offset(offset)
+      return session.scalars(stmt).all()
 
+    rows = await self.db.run(_operation)
     return [Notification.model_validate(row) for row in rows]
 
   async def unread_count(self) -> int:
-    row = await self.db.fetch_one("SELECT count(*) AS count FROM notifications WHERE read_status = 0")
+    def _operation(session):
+      stmt = select(func.count()).select_from(NotificationORM).where(NotificationORM.read_status.is_(False))
+      return int(session.scalar(stmt) or 0)
 
-    return int(row["count"]) if row else 0
+    return await self.db.run(_operation)
 
   async def mark_read(self, notification_id: str) -> Notification | None:
-    now = datetime.now().isoformat()
+    def _operation(session):
+      record = session.get(NotificationORM, notification_id)
 
-    await self.db.execute(
-      "UPDATE notifications SET read_status = 1, read_at = ? WHERE id = ?",
-      (now, notification_id),
-    )
+      if record is None:
+        return None
 
-    row = await self.db.fetch_one("SELECT * FROM notifications WHERE id = ?", (notification_id,))
+      record.read_status = True
+      record.read_at = datetime.now()
+      session.flush()
+      return record
 
-    return Notification.model_validate(row) if row else None
+    record = await self.db.run(_operation)
+    return Notification.model_validate(record) if record else None
 
   async def mark_all_read(self) -> int:
-    now = datetime.now().isoformat()
+    def _operation(session):
+      records = session.scalars(select(NotificationORM).where(NotificationORM.read_status.is_(False))).all()
+      for record in records:
+        record.read_status = True
+        record.read_at = datetime.now()
+      session.flush()
+      return len(records)
 
-    await self.db.execute("UPDATE notifications SET read_status = 1, read_at = ? WHERE read_status = 0", (now,))
-
-    return await self.unread_count()
+    return await self.db.run(_operation)

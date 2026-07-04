@@ -21,7 +21,6 @@ from fastapi import Body
 from fastapi import Query
 from fastapi import Request
 from fastapi.openapi.models import Example
-from sse_starlette.event import ServerSentEvent
 from sse_starlette.sse import EventSourceResponse
 
 from isinmi.core.models import Event
@@ -218,10 +217,12 @@ async def stream_events(
 
   async def event_generator():
     try:
-      yield ServerSentEvent(retry=retry_timeout)
+      yield {"retry": retry_timeout}
+
       while True:
         if await request.is_disconnected():
           break
+
         try:
           yield await asyncio.wait_for(subscriber.queue.get(), timeout=15)
         except TimeoutError:

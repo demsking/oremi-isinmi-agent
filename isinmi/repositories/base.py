@@ -12,28 +12,50 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from datetime import datetime
-from typing import Any
+from __future__ import annotations
 
-from isinmi.core.database import json_dumps
+import json
 
+from sqlalchemy import and_
+from sqlalchemy import exists
+from sqlalchemy import func
+from sqlalchemy import Select
+from sqlalchemy import select
+from sqlalchemy.sql.elements import ColumnElement
 
-def encode_value(value: Any) -> Any:
-  """Convert Python values to SQLite-safe values."""
-
-  if isinstance(value, datetime):
-    return value.isoformat()
-
-  if isinstance(value, list) or isinstance(value, dict):
-    return json_dumps(value)
-
-  if isinstance(value, bool):
-    return int(value)
-
-  return value
+from isinmi.core.models import clean_tags
 
 
-def placeholders(values: list[Any]) -> str:
-  """Build SQL placeholders for an INSERT statement."""
+def build_tags_filter(
+  column: ColumnElement[list[str]],
+  tags: list[str],
+  dialect_name: str,
+) -> ColumnElement[bool] | None:
+  """Build a backend-specific expression that requires every requested tag."""
 
-  return ",".join("?" for _ in values)
+  normalized = clean_tags(tags)
+
+  if not normalized:
+    return None
+
+  expressions: list[ColumnElement[bool]] = []
+
+  for tag in normalized:
+    if dialect_name == "postgresql":
+      expressions.append(column.contains([tag]))
+      continue
+
+    if dialect_name in {"mysql", "mariadb"}:
+      expressions.append(func.JSON_CONTAINS(column, json.dumps(tag)) == 1)
+      continue
+
+    values = func.json_each(column).table_valued("value")
+    expressions.append(exists(select(1).select_from(values).where(values.c.value == tag)))
+
+  return and_(*expressions)
+
+
+def sort_limit_offset(query: Select, limit: int, offset: int) -> Select:
+  """Apply standard pagination bounds."""
+
+  return query.limit(limit).offset(offset)

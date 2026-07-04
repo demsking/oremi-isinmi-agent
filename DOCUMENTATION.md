@@ -1,7 +1,7 @@
 **Oremi Isinmi Agent** is a lightweight, AI-powered personal assistant designed
 to help you manage your alerts, reminders, and events effortlessly. As a core
 subsystem of the Oremi personal assistant ecosystem, it combines the power of
-local LLMs (via Ollama) with structured data management to provide intelligent,
+local or hosted LLMs with structured data management to provide intelligent,
 privacy-first time management.
 
 ![Oremi Isinmi Agent Logo](logo.jpg)
@@ -17,7 +17,7 @@ This agent embodies that philosophy by offering:
 - **Smart Organization**: Use tags to categorize and find your reminders and events instantly
 - **Privacy First**: Everything stays on your device with encrypted local storage
 - **Real-time Notifications**: Stay informed with Server-Sent Events for alerts and reminders
-- **AI-Powered Understanding**: Leverages Ollama's qwen3.5:2b model for intelligent parsing
+- **AI-Powered Understanding**: Uses a configurable LLM backend with Ollama as the default
 
 ## Core Capabilities
 
@@ -27,7 +27,7 @@ This agent embodies that philosophy by offering:
 - **Tag-Based Organization**: Filter and find items instantly using custom tags
 - **Real-time Notifications**: SSE streaming for immediate updates
 - **AI Conversation**: Chat with the agent to manage your schedule
-- **Encrypted Storage**: All data secured with SQLCipher
+- **Encrypted Storage**: SQLAlchemy ORM with SQLCipher-backed SQLite and support for other SQL databases
 - **Lightweight Deployment**: Alpine-based [Docker image](https://hub.docker.com/r/demsking/oremi-isinmi-agent) for minimal resource usage
 
 ## Use Cases
@@ -40,7 +40,7 @@ This agent embodies that philosophy by offering:
 
 ## Security & Privacy
 
-- All data stored locally with AES-256 encryption via SQLCipher
+- Default SQLite storage is encrypted locally via SQLCipher
 - Encryption key required at startup (provided via environment variable)
 - No external data transmission (except optional Ollama API)
 - Local-first architecture ensures data sovereignty
@@ -59,14 +59,14 @@ reference on available endpoints and usage instructions.
 
 ### Volumes
 
-The Docker image defines two persistent volumes so application data and logs
-survive container recreation:
+The Docker image defines one persistent volume for application data:
 
 - **Container path:** `/oremi/data`
-- **Recommended host path:** `~/.config/oremi-isinmi-agent`
+- **Purpose:** SQLite database files and any other data you place under that directory
 
-Both volumes are optional but recommended. Without them, database files and log
-history will be lost when the container is removed.
+The image does not define a dedicated logs volume. If you want log files to
+persist across container recreation, set `OREMI_ISINMI_LOG_FILE` to a path under
+`/oremi/data` and mount that directory on the host.
 
 ### Deploy with Docker
 
@@ -102,7 +102,7 @@ services:
       - ~/.config/oremi-isinmi-agent:/oremi/data
     environment:
       OREMI_ISINMI_DATABASE_ENCRYPTION_KEY: ${OREMI_ISINMI_DATABASE_ENCRYPTION_KEY?Missing required environment variable}
-      OREMI_ISINMI_OLLAMA_BASEURL: http://ollama:11434
+      OREMI_ISINMI_OLLAMA_BASE_URL: http://ollama:11434
     env_file:
       - .env
     healthcheck:
@@ -176,10 +176,10 @@ the environment or a `.env` file in the working directory.
 #### Database Settings
 
 - `OREMI_ISINMI_DATABASE_URL`: Optional. Defaults to
-  `sqlite:///oremi/data/oremi_isinmi.db`. SQLCipher-backed SQLite database URL. Must use
-  `sqlite:///`.
+  `sqlite:///./oremi_isinmi.db`. Use `sqlite:///` for SQLCipher-backed local
+  storage, or point the ORM at a supported PostgreSQL, MariaDB, or MySQL URL.
 - `OREMI_ISINMI_DATABASE_ENCRYPTION_KEY`: **Required**. No default. SQLCipher
-  encryption key. Must be at least 32 characters long.
+  encryption key for SQLite storage. Must be at least 32 characters long.
 
 To generate a new encryption key, use a cryptographically secure random string.
 For example:
@@ -224,8 +224,14 @@ For Docker Compose, point Ollama traffic at the Compose service name when the
 agent backend is Ollama:
 
 ```env
-OLLAMA_BASE_URL="http://ollama:11434"
+OREMI_ISINMI_OLLAMA_BASE_URL=http://ollama:11434
 ```
+
+### Storage Layer
+
+The persistence layer uses SQLAlchemy ORM instead of hand-written SQL queries.
+SQLite remains encrypted through SQLCipher, while the same repositories can be
+backed by PostgreSQL or MariaDB when you need a server database.
 
 ### MCP Integration
 

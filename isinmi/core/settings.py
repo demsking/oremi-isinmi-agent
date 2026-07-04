@@ -20,6 +20,7 @@ from pydantic import field_validator
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
+from sqlalchemy.engine import make_url
 
 
 class Settings(BaseSettings):
@@ -89,8 +90,10 @@ class Settings(BaseSettings):
   @field_validator("database_url")
   @classmethod
   def validate_database_url(cls, value: str) -> str:
-    if not value.startswith("sqlite:///"):
-      raise ValueError("OREMI_ISINMI_DATABASE_URL must use sqlite:/// for SQLCipher storage")
+    url = make_url(value)
+
+    if not url.drivername.startswith(("sqlite", "postgresql", "mysql", "mariadb")):
+      raise ValueError("OREMI_ISINMI_DATABASE_URL must use sqlite:///, postgresql://, mysql://, or mariadb://")
 
     return value
 
@@ -105,7 +108,7 @@ class Settings(BaseSettings):
   def uses_ollama(self) -> bool:
     """Return whether the active agent model uses the Ollama backend."""
 
-    return "ollama:" in self.llm_model
+    return self.llm_model.startswith("ollama:")
 
   def resolve_ollama_model_name(self) -> str:
     """Return the Ollama model name without provider prefix."""

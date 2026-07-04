@@ -17,188 +17,152 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+from typing import TypeVar
 
-import sqlcipher3 as sqlite
+from sqlalchemy import create_engine
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+from sqlalchemy.engine import make_url
+from sqlalchemy.engine import Result
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import sessionmaker
 
+from .orm import Base
 from .settings import Settings
 
 logger = logging.getLogger(__name__)
+T = TypeVar("T")
 
 
 def database_path(database_url: str) -> Path:
-  """Extract a filesystem path from a sqlite:/// URL."""
+  """Extract a filesystem path from a SQLite-compatible database URL."""
 
-  raw = database_url.removeprefix("sqlite:///")
-  return Path(raw).expanduser()
+  url = make_url(database_url)
+
+  if not url.drivername.startswith("sqlite"):
+    raise ValueError("database_path only supports SQLite database URLs")
+
+  if not url.database:
+    raise ValueError("SQLite database URL must include a path")
+
+  return Path(url.database).expanduser()
 
 
 class Database:
-  """Small async wrapper around SQLCipher connections."""
+  """SQLAlchemy-backed persistence layer with SQLCipher support for SQLite."""
 
   def __init__(self, settings: Settings) -> None:
     self.settings = settings
-    self.path = database_path(settings.database_url)
-    self.key = settings.database_encryption_key.get_secret_value()
-    self._lock = asyncio.Lock()
+    self._engine = self._build_engine()
+    self._session_factory = sessionmaker(bind=self._engine, expire_on_commit=False, class_=Session)
 
-  def _connect(self) -> sqlite.Connection:
-    if sqlite is None:
-      raise RuntimeError("sqlcipher3 is required for encrypted database storage")
+  @property
+  def engine(self) -> Engine:
+    return self._engine
 
-    self.path.parent.mkdir(parents=True, exist_ok=True)
+  def _build_engine(self) -> Engine:
+    url = make_url(self.settings.database_url)
 
-    conn = sqlite.connect(str(self.path), check_same_thread=False)
-    conn.row_factory = sqlite.Row
-    escaped_key = self.key.replace("'", "''")
-
-    conn.execute(f"PRAGMA key = '{escaped_key}'")
-    conn.execute("PRAGMA cipher_memory_security = ON")
-    conn.execute("PRAGMA foreign_keys = ON")
-    conn.execute("PRAGMA journal_mode = WAL")
-    conn.execute("SELECT count(*) FROM sqlite_master")
-
-    return conn
-
-  @asynccontextmanager
-  async def connection(self) -> AsyncGenerator[sqlite.Connection, None]:
-    async with self._lock:
-      conn = await asyncio.to_thread(self._connect)
-
+    if url.drivername.startswith("sqlite"):
       try:
-        yield conn
-        await asyncio.to_thread(conn.commit)
-      except Exception:
-        await asyncio.to_thread(conn.rollback)
+        import sqlcipher3 as sqlite
+      except ImportError as exc:
+        raise RuntimeError("sqlcipher3 is required for encrypted SQLite storage") from exc
+
+      database_file = database_path(self.settings.database_url)
+      database_file.parent.mkdir(parents=True, exist_ok=True)
+
+      engine = create_engine(
+        f"sqlite:///{database_file.as_posix()}",
+        connect_args={"check_same_thread": False},
+        module=sqlite,
+        future=True,
+        pool_pre_ping=True,
+      )
+
+      encryption_key = self.settings.database_encryption_key.get_secret_value().replace("'", "''")
+
+      @event.listens_for(engine, "connect")
+      def _configure_sqlcipher(dbapi_connection, _connection_record) -> None:  # type: ignore[no-untyped-def]
+        dbapi_connection.execute(f"PRAGMA key = '{encryption_key}'")
+        dbapi_connection.execute("PRAGMA cipher_memory_security = ON")
+        dbapi_connection.execute("PRAGMA foreign_keys = ON")
+        dbapi_connection.execute("PRAGMA journal_mode = WAL")
+        dbapi_connection.execute("SELECT count(*) FROM sqlite_master")
+
+      return engine
+
+    return create_engine(self.settings.database_url, future=True, pool_pre_ping=True)
+
+  def _run_sync(self, operation: Callable[[Session], T]) -> T:
+    with self._session_factory() as session:
+      try:
+        with session.begin():
+          return operation(session)
+      except SQLAlchemyError:
+        session.rollback()
         raise
-      finally:
-        await asyncio.to_thread(conn.close)
+      except Exception:
+        session.rollback()
+        raise
 
-  async def execute(self, sql: str, params: tuple[Any, ...] = ()) -> None:
-    async with self.connection() as conn:
-      await asyncio.to_thread(conn.execute, sql, params)
+  async def run(self, operation: Callable[[Session], T]) -> T:
+    """Run a synchronous SQLAlchemy operation in a worker thread."""
 
-  async def fetch_one(self, sql: str, params: tuple[Any, ...] = ()) -> dict[str, Any] | None:
-    async with self.connection() as conn:
-      cursor = await asyncio.to_thread(conn.execute, sql, params)
-      row = await asyncio.to_thread(cursor.fetchone)
+    return await asyncio.to_thread(self._run_sync, operation)
 
-      return dict(row) if row else None
+  async def execute(self, statement: str, params: dict[str, Any] | tuple[Any, ...] | None = None) -> None:
+    """Compatibility helper for legacy call sites."""
 
-  async def fetch_all(self, sql: str, params: tuple[Any, ...] = ()) -> list[dict[str, Any]]:
-    async with self.connection() as conn:
-      cursor = await asyncio.to_thread(conn.execute, sql, params)
-      rows = await asyncio.to_thread(cursor.fetchall)
+    def _operation(session: Session) -> None:
+      session.connection().exec_driver_sql(statement, params or ())
 
-      return [dict(row) for row in rows]
+    await self.run(_operation)
+
+  async def fetch_one(
+    self,
+    statement: str,
+    params: dict[str, Any] | tuple[Any, ...] | None = None,
+  ) -> dict[str, Any] | None:
+    """Compatibility helper for legacy call sites."""
+
+    def _operation(session: Session) -> dict[str, Any] | None:
+      result: Result[Any] = session.connection().exec_driver_sql(statement, params or ())
+      row = result.mappings().first()
+      return dict(row) if row is not None else None
+
+    return await self.run(_operation)
+
+  async def fetch_all(
+    self,
+    statement: str,
+    params: dict[str, Any] | tuple[Any, ...] | None = None,
+  ) -> list[dict[str, Any]]:
+    """Compatibility helper for legacy call sites."""
+
+    def _operation(session: Session) -> list[dict[str, Any]]:
+      result: Result[Any] = session.connection().exec_driver_sql(statement, params or ())
+      return [dict(row) for row in result.mappings().all()]
+
+    return await self.run(_operation)
 
   async def initialize(self) -> None:
-    """Create tables and indexes. Alembic migrations mirror this schema."""
+    """Create the database schema on startup."""
 
-    statements = [
-      """
-      CREATE TABLE IF NOT EXISTS alerts (
-          id TEXT PRIMARY KEY,
-          title TEXT NOT NULL,
-          message TEXT NOT NULL,
-          severity TEXT NOT NULL CHECK (severity IN ('info','warning','critical')),
-          timestamp TEXT NOT NULL,
-          source TEXT,
-          tags TEXT NOT NULL DEFAULT '[]',
-          acknowledged INTEGER NOT NULL DEFAULT 0,
-          acknowledged_at TEXT
-      )
-      """,
-      """
-      CREATE TABLE IF NOT EXISTS reminders (
-          id TEXT PRIMARY KEY,
-          title TEXT NOT NULL,
-          description TEXT,
-          datetime TEXT NOT NULL,
-          recurring TEXT NOT NULL CHECK (recurring IN ('none','daily','weekly','monthly')),
-          tags TEXT NOT NULL DEFAULT '[]',
-          status TEXT NOT NULL CHECK (status IN ('pending','completed','dismissed')),
-          created_at TEXT NOT NULL,
-          notified_at TEXT
-      )
-      """,
-      """
-      CREATE TABLE IF NOT EXISTS events (
-          id TEXT PRIMARY KEY,
-          title TEXT NOT NULL,
-          description TEXT,
-          start_datetime TEXT NOT NULL,
-          end_datetime TEXT NOT NULL,
-          location TEXT,
-          attendees TEXT NOT NULL DEFAULT '[]',
-          tags TEXT NOT NULL DEFAULT '[]',
-          reminders TEXT NOT NULL DEFAULT '[15,30,60]',
-          status TEXT NOT NULL CHECK (status IN ('scheduled','ongoing','completed','cancelled')),
-          created_at TEXT NOT NULL
-      )
-      """,
-      """
-      CREATE TABLE IF NOT EXISTS notifications (
-          id TEXT PRIMARY KEY,
-          type TEXT NOT NULL CHECK (type IN ('alert','reminder','event')),
-          message TEXT NOT NULL,
-          entity_id TEXT NOT NULL,
-          tags TEXT NOT NULL DEFAULT '[]',
-          timestamp TEXT NOT NULL,
-          read_status INTEGER NOT NULL DEFAULT 0,
-          read_at TEXT
-      )
-      """,
-      """
-      CREATE TABLE IF NOT EXISTS agent_conversations (
-          id TEXT PRIMARY KEY,
-          message TEXT NOT NULL,
-          response TEXT NOT NULL,
-          action_type TEXT NOT NULL,
-          entity_type TEXT NOT NULL,
-          tags TEXT NOT NULL DEFAULT '[]',
-          context TEXT NOT NULL DEFAULT '{}',
-          created_at TEXT NOT NULL
-      )
-      """,
-      "CREATE INDEX IF NOT EXISTS idx_alerts_timestamp ON alerts(timestamp)",
-      "CREATE INDEX IF NOT EXISTS idx_alerts_severity ON alerts(severity)",
-      "CREATE INDEX IF NOT EXISTS idx_alerts_acknowledged ON alerts(acknowledged)",
-      "CREATE INDEX IF NOT EXISTS idx_alerts_tags ON alerts(tags)",
-      "CREATE INDEX IF NOT EXISTS idx_reminders_datetime ON reminders(datetime)",
-      "CREATE INDEX IF NOT EXISTS idx_reminders_status ON reminders(status)",
-      "CREATE INDEX IF NOT EXISTS idx_reminders_tags ON reminders(tags)",
-      "CREATE INDEX IF NOT EXISTS idx_events_start_datetime ON events(start_datetime)",
-      "CREATE INDEX IF NOT EXISTS idx_events_end_datetime ON events(end_datetime)",
-      "CREATE INDEX IF NOT EXISTS idx_events_status ON events(status)",
-      "CREATE INDEX IF NOT EXISTS idx_events_tags ON events(tags)",
-      "CREATE INDEX IF NOT EXISTS idx_notifications_timestamp ON notifications(timestamp)",
-      "CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type)",
-      "CREATE INDEX IF NOT EXISTS idx_notifications_entity_id ON notifications(entity_id)",
-      "CREATE INDEX IF NOT EXISTS idx_notifications_read_status ON notifications(read_status)",
-      "CREATE INDEX IF NOT EXISTS idx_notifications_tags ON notifications(tags)",
-    ]
-    async with self.connection() as conn:
-      for statement in statements:
-        await asyncio.to_thread(conn.execute, statement)
-    logger.info("Encrypted database initialized at %s", self.path)
+    await asyncio.to_thread(Base.metadata.create_all, self._engine)
+    logger.info("Encrypted database initialized at %s", database_path(self.settings.database_url))
+
+  async def dispose(self) -> None:
+    """Dispose the underlying SQLAlchemy engine."""
+
+    await asyncio.to_thread(self._engine.dispose)
 
 
 def json_dumps(value: Any) -> str:
+  """Serialize values for logging and JSON payload storage."""
+
   return json.dumps(value, separators=(",", ":"), ensure_ascii=False)
-
-
-def tags_filter_sql(tags: list[str], column: str = "tags") -> tuple[str, list[str]]:
-  """Return SQL and params matching rows that contain every requested tag."""
-
-  clauses: list[str] = []
-  params: list[str] = []
-
-  for tag in tags:
-    clauses.append(f"EXISTS (SELECT 1 FROM json_each({column}) WHERE value = ?)")
-    params.append(tag)
-
-  return (" AND ".join(clauses), params)
