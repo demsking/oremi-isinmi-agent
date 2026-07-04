@@ -14,10 +14,11 @@
 # ==============================================================================
 from fastapi import APIRouter
 from fastapi import HTTPException
-from fastapi.responses import HTMLResponse
 from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 
-from ..core.package import PROJECT_DIRECTORY, STATIC_DIR
+from ..core.package import PROJECT_DIRECTORY
+from ..core.package import STATIC_DIR
 
 router = APIRouter(prefix="/docs")
 

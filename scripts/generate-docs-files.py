@@ -14,8 +14,8 @@
 # ==============================================================================
 from fastapi.testclient import TestClient
 
-from isinmi.core.package import STATIC_DIR
 from isinmi import app
+from isinmi.core.package import STATIC_DIR
 
 
 HTDOCS_INDEX_FILE = STATIC_DIR / "index.html"
