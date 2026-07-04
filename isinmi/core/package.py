@@ -19,9 +19,13 @@ __all__ = [
   "APP_DESCRIPTION",
   "APP_NAME",
   "APP_VERSION",
+  "PROJECT_DIRECTORY",
+  "STATIC_DIR",
 ]
 
 PROJECT_DIRECTORY = Path(__file__).resolve().parents[2]
+STATIC_DIR = PROJECT_DIRECTORY / "htdocs"
+
 _pyproject_path = PROJECT_DIRECTORY / "pyproject.toml"
 
 with _pyproject_path.open("rb") as file:

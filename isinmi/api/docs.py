@@ -12,20 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import os
-
 from fastapi import APIRouter
+from fastapi import HTTPException
 from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse
 
-router = APIRouter(prefix="/docs", include_in_schema=False)
+from ..core.package import PROJECT_DIRECTORY, STATIC_DIR
 
-_current_dir = os.path.dirname(os.path.abspath(__file__))
-_readme_path = os.path.realpath(
-  os.path.join(_current_dir, "..", "..", "DOCUMENTATION.md"),
-)
+router = APIRouter(prefix="/docs")
 
-with open(_readme_path, encoding="utf-8") as file:
-  SERVICE_DESCRIPTION = file.read()
+DOCUMENTATION_PATH = PROJECT_DIRECTORY / "DOCUMENTATION.md"
+SERVICE_DESCRIPTION = DOCUMENTATION_PATH.read_text(encoding="utf-8")
+
+@router.get("/static/{file_path:path}", include_in_schema=False)
+async def static_asset(file_path: str) -> FileResponse:
+  asset = (STATIC_DIR / file_path).resolve()
+
+  if STATIC_DIR not in asset.parents and asset != STATIC_DIR:
+    raise HTTPException(status_code=404, detail="Static asset not found")
+
+  if not asset.is_file():
+    raise HTTPException(status_code=404, detail="Static asset not found")
+
+  return FileResponse(asset)
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -37,6 +46,7 @@ async def html_documentation():
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Oremi Isinmi Agent Documentation</title>
+        <link rel="icon" href="./static/favicon.png">
       </head>
       <body>
         <div id="app"></div>

@@ -4,7 +4,7 @@ subsystem of the Oremi personal assistant ecosystem, it combines the power of
 local or hosted LLMs with structured data management to provide intelligent,
 privacy-first time management.
 
-![Oremi Isinmi Agent Logo](logo.jpg)
+![Oremi Isinmi Agent Logo](./static/logo.jpg)
 
 ## Why Oremi Isinmi?
 
