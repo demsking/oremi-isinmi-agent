@@ -19,10 +19,10 @@ from datetime import timedelta
 
 from sqlalchemy import select
 
-from isinmi.core.database import Database
-from isinmi.core.models import Reminder
-from isinmi.core.orm import ReminderORM
-from isinmi.repositories.base import build_tags_filter
+from ..core.database import Database
+from ..core.models import Reminder
+from ..core.orm import ReminderORM
+from ..repositories.base import build_tags_filter
 
 
 class ReminderRepository:

@@ -16,9 +16,9 @@ from logging.config import fileConfig
 
 from alembic import context
 
-from isinmi.core.database import Database
-from isinmi.core.orm import Base
-from isinmi.core.settings import get_settings
+from ..core.database import Database
+from ..core.orm import Base
+from ..core.settings import get_settings
 
 config = context.config
 if config.config_file_name is not None:

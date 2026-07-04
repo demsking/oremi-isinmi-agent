@@ -18,10 +18,10 @@ from datetime import datetime
 
 from sqlalchemy import select
 
-from isinmi.core.database import Database
-from isinmi.core.models import Alert
-from isinmi.core.orm import AlertORM
-from isinmi.repositories.base import build_tags_filter
+from ..core.database import Database
+from ..core.models import Alert
+from ..core.orm import AlertORM
+from ..repositories.base import build_tags_filter
 
 
 class AlertRepository:

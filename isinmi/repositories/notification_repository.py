@@ -19,10 +19,10 @@ from datetime import datetime
 from sqlalchemy import func
 from sqlalchemy import select
 
-from isinmi.core.database import Database
-from isinmi.core.models import Notification
-from isinmi.core.orm import NotificationORM
-from isinmi.repositories.base import build_tags_filter
+from ..core.database import Database
+from ..core.models import Notification
+from ..core.orm import NotificationORM
+from ..repositories.base import build_tags_filter
 
 
 class NotificationRepository:

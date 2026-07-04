@@ -22,30 +22,30 @@ from fastapi.responses import HTMLResponse
 from fastapi.responses import JSONResponse
 from fastapi_mcp import FastApiMCP
 
-from isinmi.api import agent
-from isinmi.api import alerts
-from isinmi.api import docs
-from isinmi.api import events
-from isinmi.api import health
-from isinmi.api import notifications
-from isinmi.api import reminders
-from isinmi.core.database import Database
-from isinmi.core.package import APP_DESCRIPTION
-from isinmi.core.package import APP_NAME
-from isinmi.core.package import APP_VERSION
-from isinmi.core.settings import get_settings
-from isinmi.core.settings import Settings
-from isinmi.repositories.alert_repository import AlertRepository
-from isinmi.repositories.event_repository import EventRepository
-from isinmi.repositories.notification_repository import NotificationRepository
-from isinmi.repositories.reminder_repository import ReminderRepository
-from isinmi.services.agent_service import AgentService
-from isinmi.services.alert_service import AlertService
-from isinmi.services.event_service import EventService
-from isinmi.services.notification_service import NotificationService
-from isinmi.services.reminder_service import ReminderService
-from isinmi.sse.manager import SSEManager
-from isinmi.utils.logger import configure_logging
+from ..api import agent
+from ..api import alerts
+from ..api import docs
+from ..api import events
+from ..api import health
+from ..api import notifications
+from ..api import reminders
+from ..repositories.alert_repository import AlertRepository
+from ..repositories.event_repository import EventRepository
+from ..repositories.notification_repository import NotificationRepository
+from ..repositories.reminder_repository import ReminderRepository
+from ..services.agent_service import AgentService
+from ..services.alert_service import AlertService
+from ..services.event_service import EventService
+from ..services.notification_service import NotificationService
+from ..services.reminder_service import ReminderService
+from ..sse.manager import SSEManager
+from ..utils.logger import configure_logging
+from .database import Database
+from .package import APP_DESCRIPTION
+from .package import APP_NAME
+from .package import APP_VERSION
+from .settings import get_settings
+from .settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ async def _pull_ollama_model(settings: Settings) -> None:
     logger.warning(f"Could not pull Ollama model {settings.resolve_ollama_model_name()}: {exception}")
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None) -> tuple[FastAPI, Settings]:
   """Build the FastAPI application."""
 
   resolved_settings = settings or get_settings()
@@ -85,6 +85,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     logger.info("SSE Retry Timeout: %s", resolved_settings.sse_retry_timeout)
 
     db = Database(resolved_settings)
+
     await db.initialize()
 
     sse = SSEManager()
@@ -169,4 +170,4 @@ def create_app(settings: Settings | None = None) -> FastAPI:
   mcp.mount_http()
   app.state.mcp = mcp
 
-  return app
+  return app, resolved_settings

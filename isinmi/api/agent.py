@@ -17,10 +17,10 @@ from fastapi import Body
 from fastapi import Request
 from fastapi.openapi.models import Example
 
-from isinmi.core.models import AgentAction
-from isinmi.core.models import AgentChatRequest
-from isinmi.core.models import TagsRequest
-from isinmi.services.agent_service import AgentService
+from ..core.models import AgentAction
+from ..core.models import AgentChatRequest
+from ..core.models import TagsRequest
+from ..services.agent_service import AgentService
 
 API_TAG_METADATA = {
   "name": "Agent Endpoints",

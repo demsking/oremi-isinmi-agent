@@ -12,22 +12,68 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import asyncio
 import logging
 import sys
 
-from pydantic import ValidationError
+import uvicorn
 
-from isinmi.core.app import create_app
+from isinmi import app
+from isinmi import settings
+from isinmi.core.package import APP_NAME
+from isinmi.utils.logger import LOGGER_DATE_FORMAT
+from isinmi.utils.logger import LOGGER_FORMAT
 
 logger = logging.getLogger(__name__)
 
 
-try:
-  app = create_app()
-except ValidationError as exc:
-  print("Invalid Oremi Isinmi configuration:", file=sys.stderr)
+async def main() -> None:
+  config = uvicorn.Config(
+    app=app,
+    host=settings.server_host,
+    port=settings.server_port,
+    server_header=False,
+    use_colors=True,
+    proxy_headers=True,
+    log_level="info",
+    log_config={
+      "version": 1,
+      "disable_existing_loggers": False,
+      "formatters": {
+        "default": {
+          "()": "uvicorn.logging.DefaultFormatter",
+          "fmt": LOGGER_FORMAT,
+          "datefmt": LOGGER_DATE_FORMAT,
+          "use_colors": True,
+        },
+        "access": {
+          "()": "uvicorn.logging.AccessFormatter",
+          "fmt": f'%(asctime)s - {APP_NAME} - HTTP - %(client_addr)s - "%(request_line)s" %(status_code)s',
+          "datefmt": LOGGER_DATE_FORMAT,
+          "use_colors": True,
+        },
+      },
+      "handlers": {
+        "default": {"formatter": "default", "class": "logging.StreamHandler", "stream": "ext://sys.stderr"},
+        "access": {"formatter": "access", "class": "logging.StreamHandler", "stream": "ext://sys.stdout"},
+      },
+      "loggers": {
+        "uvicorn": {"handlers": ["default"], "level": "INFO", "propagate": False},
+        "uvicorn.error": {"level": "INFO"},
+        "uvicorn.access": {"handlers": ["access"], "level": "INFO", "propagate": False},
+      },
+    },
+  )
 
-  for error in exc.errors():
-    print(f"- {'.'.join(str(part) for part in error['loc'])}: {error['msg']}", file=sys.stderr)
+  await uvicorn.Server(config).serve()
 
-  sys.exit(1)
+
+if __name__ == "__main__":
+  try:
+    asyncio.run(main())
+  except KeyboardInterrupt:
+    pass
+  except Exception as exc:
+    print("Oremi Isinmi Agent failed to start:", file=sys.stderr)
+    print(f"- {exc}", file=sys.stderr)
+    sys.exit(4)

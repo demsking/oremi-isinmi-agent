@@ -16,9 +16,9 @@ from __future__ import annotations
 
 from fastapi import HTTPException
 
-from isinmi.core.models import Notification
-from isinmi.repositories.notification_repository import NotificationRepository
-from isinmi.sse.manager import SSEManager
+from ..core.models import Notification
+from ..repositories.notification_repository import NotificationRepository
+from ..sse.manager import SSEManager
 
 
 class NotificationService:

@@ -18,11 +18,11 @@ from datetime import datetime
 
 from fastapi import HTTPException
 
-from isinmi.core.models import Reminder
-from isinmi.core.models import ReminderCreate
-from isinmi.core.models import ReminderUpdate
-from isinmi.repositories.reminder_repository import ReminderRepository
-from isinmi.services.notification_service import NotificationService
+from ..core.models import Reminder
+from ..core.models import ReminderCreate
+from ..core.models import ReminderUpdate
+from ..repositories.reminder_repository import ReminderRepository
+from ..services.notification_service import NotificationService
 
 
 class ReminderService:

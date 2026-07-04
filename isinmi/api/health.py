@@ -17,9 +17,9 @@ from fastapi import Request
 from pydantic import BaseModel
 from pydantic import Field
 
-from isinmi.core.package import APP_NAME
-from isinmi.core.package import APP_VERSION
-from isinmi.core.settings import Settings
+from ..core.package import APP_NAME
+from ..core.package import APP_VERSION
+from ..core.settings import Settings
 
 API_TAG_METADATA = {
   "name": "Server Endpoints",

@@ -21,12 +21,12 @@ from fastapi import Query
 from fastapi import Request
 from fastapi.openapi.models import Example
 
-from isinmi.core.models import Reminder
-from isinmi.core.models import ReminderCreate
-from isinmi.core.models import ReminderUpdate
-from isinmi.services.reminder_service import ReminderService
-from isinmi.utils.validators import ensure_date_range
-from isinmi.utils.validators import parse_tags_query
+from ..core.models import Reminder
+from ..core.models import ReminderCreate
+from ..core.models import ReminderUpdate
+from ..services.reminder_service import ReminderService
+from ..utils.validators import ensure_date_range
+from ..utils.validators import parse_tags_query
 
 API_TAG_METADATA = {
   "name": "Reminders Endpoints",

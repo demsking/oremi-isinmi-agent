@@ -94,7 +94,7 @@ image-test:
 	  --tag $(IMAGE_NAME):test
 
 live: image-test
-	docker run -it --rm --env-file .env.example demsking/oremi-isinmi-agent:test
+	docker run -it --rm --env-file .env.example -v ./data:/oremi/data demsking/oremi-isinmi-agent:test
 
 publish: image-test
 	git tag v$(APP_VERSION)

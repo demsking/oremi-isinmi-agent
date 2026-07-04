@@ -18,10 +18,10 @@ from datetime import datetime
 
 from sqlalchemy import select
 
-from isinmi.core.database import Database
-from isinmi.core.models import Event
-from isinmi.core.orm import EventORM
-from isinmi.repositories.base import build_tags_filter
+from ..core.database import Database
+from ..core.models import Event
+from ..core.orm import EventORM
+from ..repositories.base import build_tags_filter
 
 
 class EventRepository:

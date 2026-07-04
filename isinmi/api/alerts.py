@@ -20,10 +20,10 @@ from fastapi import Query
 from fastapi import Request
 from fastapi.openapi.models import Example
 
-from isinmi.core.models import Alert
-from isinmi.core.models import AlertCreate
-from isinmi.services.alert_service import AlertService
-from isinmi.utils.validators import parse_tags_query
+from ..core.models import Alert
+from ..core.models import AlertCreate
+from ..services.alert_service import AlertService
+from ..utils.validators import parse_tags_query
 
 API_TAG_METADATA = {
   "name": "Alerts Endpoints",

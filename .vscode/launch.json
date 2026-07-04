@@ -7,7 +7,7 @@
       "request": "launch",
       "module": "uvicorn",
       "args": [
-        "isinmi.__main__:app",
+        "isinmi:app",
         "--reload",
         "--reload-dir",
         "isinmi",
@@ -19,6 +19,7 @@
       "cwd": "${workspaceFolder}",
       "envFile": "${workspaceFolder}/.env.example",
       "env": {
+        "OREMI_ISINMI_LOG_LEVEL": "DEBUG",
         "OREMI_ISINMI_OLLAMA_BASE_URL": "http://localhost:21434"
       },
       "console": "integratedTerminal",

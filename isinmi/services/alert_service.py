@@ -16,10 +16,10 @@ from __future__ import annotations
 
 from fastapi import HTTPException
 
-from isinmi.core.models import Alert
-from isinmi.core.models import AlertCreate
-from isinmi.repositories.alert_repository import AlertRepository
-from isinmi.services.notification_service import NotificationService
+from ..core.models import Alert
+from ..core.models import AlertCreate
+from ..repositories.alert_repository import AlertRepository
+from ..services.notification_service import NotificationService
 
 
 class AlertService:

@@ -20,16 +20,16 @@ from datetime import timedelta
 from pydantic_ai import Agent
 from pydantic_ai.agent import AgentModelSettings
 
-from isinmi.core.database import Database
-from isinmi.core.models import AgentAction
-from isinmi.core.models import AgentChatRequest
-from isinmi.core.models import clean_tags
-from isinmi.core.models import new_id
-from isinmi.core.models import ReminderCreate
-from isinmi.core.models import TagsRequest
-from isinmi.core.orm import AgentConversationORM
-from isinmi.core.settings import Settings
-from isinmi.services.reminder_service import ReminderService
+from ..core.database import Database
+from ..core.models import AgentAction
+from ..core.models import AgentChatRequest
+from ..core.models import clean_tags
+from ..core.models import new_id
+from ..core.models import ReminderCreate
+from ..core.models import TagsRequest
+from ..core.orm import AgentConversationORM
+from ..core.settings import Settings
+from ..services.reminder_service import ReminderService
 
 logger = logging.getLogger(__name__)
 

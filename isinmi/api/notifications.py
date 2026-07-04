@@ -18,9 +18,9 @@ from fastapi import APIRouter
 from fastapi import Query
 from fastapi import Request
 
-from isinmi.core.models import Notification
-from isinmi.services.notification_service import NotificationService
-from isinmi.utils.validators import parse_tags_query
+from ..core.models import Notification
+from ..services.notification_service import NotificationService
+from ..utils.validators import parse_tags_query
 
 API_TAG_METADATA = {
   "name": "Notifications Endpoints",

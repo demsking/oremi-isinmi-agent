@@ -16,16 +16,17 @@ import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from isinmi.core.package import APP_NAME
+from ..core.package import APP_NAME
+
+
+LOGGER_FORMAT = f"%(asctime)s - {APP_NAME} - %(levelname)s - %(message)s"
+LOGGER_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def configure_logging(level: str, log_file: str) -> None:
   """Configure console and rotating file logging."""
 
-  formatter = logging.Formatter(
-    fmt=f"%(asctime)s {APP_NAME} - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-  )
+  formatter = logging.Formatter(fmt=LOGGER_FORMAT, datefmt=LOGGER_DATE_FORMAT)
 
   root = logging.getLogger()
   root.setLevel(level)

@@ -17,7 +17,7 @@ from datetime import datetime
 from fastapi import HTTPException
 from fastapi import Query
 
-from isinmi.core.models import clean_tags
+from ..core.models import clean_tags
 
 
 def parse_tags_query(tags: str | None = Query(default=None, description="Comma-separated tag list.")) -> list[str]:
