@@ -1375,7 +1375,7 @@ wheels = [
 
 [[package]]
 name = "oremi-isinmi-agent"
-version = "1.0.0b9"
+version = "1.0.0b10"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
