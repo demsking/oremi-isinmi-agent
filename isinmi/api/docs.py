@@ -55,9 +55,14 @@ async def html_documentation():
         <script type="module">
           const response = await fetch('../openapi.json');
           const openapi = await response.json();
+          const isGitlabPage = location.origin.includes('gitlab.io');
 
           openapi.info.title = 'Oremi Isinmi Agent Documentation';
           openapi.info.description = "{SERVICE_DESCRIPTION.replace('"', '\\"').replace("\n", "\\n")}";
+
+          if (isGitlabPage) {{
+            openapi.info.servers = [];
+          }}
 
           Scalar.createApiReference('#app', {{
             title: 'Oremi Isinmi Agent API',
@@ -66,7 +71,7 @@ async def html_documentation():
             }},
             content: openapi,
             hideClientButton: true,
-            hideTestRequestButton: location.origin.includes('gitlab.io'),
+            hideTestRequestButton: isGitlabPage,
             expandAllModelSections: true,
             showSidebar: true,
             showDeveloperTools: 'localhost',
