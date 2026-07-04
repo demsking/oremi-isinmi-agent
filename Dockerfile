@@ -40,6 +40,8 @@ COPY --chown=oremi:oremi isinmi/ ./isinmi/
 
 ENV PATH="/oremi/.venv/bin:$PATH"
 ENV PYTHONPATH="/oremi:/oremi/.venv/lib/python3.12/site-packages"
+
+ENV OREMI_SERVER_HOST=0.0.0.0
 ENV OREMI_ISINMI_DATABASE_URL=sqlite:////oremi/data/oremi_isinmi.db
 
 USER oremi
