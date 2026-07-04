@@ -1,0 +1,42 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "isinmi.__main__:app",
+        "--reload",
+        "--reload-dir",
+        "isinmi",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "7337"
+      ],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env.example",
+      "env": {
+        "OREMI_ISINMI_OLLAMA_BASE_URL": "http://localhost:21434"
+      },
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Pytest",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests",
+        "-v"
+      ],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}

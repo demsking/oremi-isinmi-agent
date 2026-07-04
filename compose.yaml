@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  ollama:
+    tty: true
+    image: ollama/ollama
+    restart: always
+    runtime: nvidia
+    ports:
+      - "21434:11434"
+    volumes:
+      - ~/.ollama:/root/.ollama
+    environment:
+      CUDA_VISIBLE_DEVICES: 0
