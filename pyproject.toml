@@ -1,6 +1,6 @@
 [project]
 name = "oremi-isinmi-agent"
-version = "1.0.0-beta11"
+version = "1.0.0-beta12"
 description = "Encrypted alerts, reminders, scheduling, tags, SSE, and natural language agent API."
 authors = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
 maintainers = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
