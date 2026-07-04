@@ -139,9 +139,9 @@ the environment or a `.env` file in the working directory.
 #### Application and Server Settings
 
 - `OREMI_ISINMI_SERVER_HOST`: Optional. Defaults to `0.0.0.0`. Host interface used by
-  the server.
-- `OREMI_ISINMI_SERVER_PORT`: Optional. Defaults to `7337`. Port used by the FastAPI
-  server.
+  the Oremi Isinmi server.
+- `OREMI_ISINMI_SERVER_PORT`: Optional. Defaults to `7337`. Port used by the
+  Oremi Isinmi server.
 - `OREMI_ISINMI_API_PREFIX`: Optional. Defaults to `/`. Prefix for all API
   routes. Must start with `/`.
 
