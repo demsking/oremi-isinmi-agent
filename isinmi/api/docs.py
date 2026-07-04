@@ -24,6 +24,7 @@ router = APIRouter(prefix="/docs")
 DOCUMENTATION_PATH = PROJECT_DIRECTORY / "DOCUMENTATION.md"
 SERVICE_DESCRIPTION = DOCUMENTATION_PATH.read_text(encoding="utf-8")
 
+
 @router.get("/static/{file_path:path}", include_in_schema=False)
 async def static_asset(file_path: str) -> FileResponse:
   asset = (STATIC_DIR / file_path).resolve()
@@ -65,7 +66,7 @@ async def html_documentation():
             }},
             content: openapi,
             hideClientButton: true,
-            hideTestRequestButton: false,
+            hideTestRequestButton: location.origin.includes('gitlab.io'),
             expandAllModelSections: true,
             showSidebar: true,
             showDeveloperTools: 'localhost',
