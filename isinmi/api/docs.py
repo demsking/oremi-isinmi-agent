@@ -61,7 +61,7 @@ async def html_documentation():
           openapi.info.description = "{SERVICE_DESCRIPTION.replace('"', '\\"').replace("\n", "\\n")}";
 
           if (isGitlabPage) {{
-            openapi.info.servers = [];
+            openapi.servers = [];
           }}
 
           Scalar.createApiReference('#app', {{
