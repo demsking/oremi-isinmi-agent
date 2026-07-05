@@ -1,7 +1,7 @@
 [project]
 name = "oremi-isinmi-agent"
-version = "1.0.0-beta14"
-description = "Encrypted alerts, reminders, scheduling, tags, SSE, and natural language agent API."
+version = "1.0.0-beta15"
+description = "Encrypted reminders, scheduling, tags, SSE, and natural language agent API."
 authors = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
 maintainers = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
 license = { text = "Apache-2.0" }
@@ -11,7 +11,6 @@ requires-python = ">=3.12"
 keywords = [
   "agent",
   "ai",
-  "alerts",
   "api",
   "calendar",
   "encryption",
