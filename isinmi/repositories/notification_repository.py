@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from sqlalchemy import func
 from sqlalchemy import select
@@ -52,7 +53,7 @@ class NotificationRepository:
 
   async def list(
     self,
-    type_: str | None = None,
+    type_: Literal["reminder", "event"] | None = None,
     read_status: bool | None = None,
     tags: list[str] | None = None,
     limit: int = 100,

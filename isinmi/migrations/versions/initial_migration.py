@@ -25,19 +25,6 @@ depends_on = None
 
 def upgrade() -> None:
   op.create_table(
-    "alerts",
-    sa.Column("id", sa.String(), primary_key=True),
-    sa.Column("title", sa.String(length=200), nullable=False),
-    sa.Column("message", sa.String(), nullable=False),
-    sa.Column("severity", sa.String(length=16), nullable=False),
-    sa.Column("timestamp", sa.DateTime(), nullable=False),
-    sa.Column("source", sa.String(length=100), nullable=True),
-    sa.Column("tags", sa.JSON(), nullable=False),
-    sa.Column("acknowledged", sa.Boolean(), nullable=False, server_default=sa.text("0")),
-    sa.Column("acknowledged_at", sa.DateTime(), nullable=True),
-    sa.CheckConstraint("severity IN ('info', 'warning', 'critical')", name="ck_alerts_severity"),
-  )
-  op.create_table(
     "reminders",
     sa.Column("id", sa.String(), primary_key=True),
     sa.Column("title", sa.String(length=200), nullable=False),
@@ -107,7 +94,7 @@ def upgrade() -> None:
     sa.Column("timestamp", sa.DateTime(), nullable=False),
     sa.Column("read_status", sa.Boolean(), nullable=False, server_default=sa.text("0")),
     sa.Column("read_at", sa.DateTime(), nullable=True),
-    sa.CheckConstraint("type IN ('alert', 'reminder', 'event')", name="ck_notifications_type"),
+    sa.CheckConstraint("type IN ('reminder', 'event')", name="ck_notifications_type"),
   )
   op.create_table(
     "agent_conversations",
@@ -121,10 +108,6 @@ def upgrade() -> None:
     sa.Column("created_at", sa.DateTime(), nullable=False),
   )
 
-  op.create_index("idx_alerts_timestamp", "alerts", ["timestamp"])
-  op.create_index("idx_alerts_severity", "alerts", ["severity"])
-  op.create_index("idx_alerts_acknowledged", "alerts", ["acknowledged"])
-  op.create_index("idx_alerts_tags", "alerts", ["tags"])
   op.create_index("idx_reminders_datetime", "reminders", ["datetime"])
   op.create_index("idx_reminders_status", "reminders", ["status"])
   op.create_index("idx_reminders_tags", "reminders", ["tags"])
@@ -166,14 +149,9 @@ def downgrade() -> None:
   op.drop_index("idx_reminders_tags", table_name="reminders")
   op.drop_index("idx_reminders_status", table_name="reminders")
   op.drop_index("idx_reminders_datetime", table_name="reminders")
-  op.drop_index("idx_alerts_tags", table_name="alerts")
-  op.drop_index("idx_alerts_acknowledged", table_name="alerts")
-  op.drop_index("idx_alerts_severity", table_name="alerts")
-  op.drop_index("idx_alerts_timestamp", table_name="alerts")
   op.drop_table("agent_conversations")
   op.drop_table("caldav_event_links")
   op.drop_table("caldav_accounts")
   op.drop_table("notifications")
   op.drop_table("events")
   op.drop_table("reminders")
-  op.drop_table("alerts")

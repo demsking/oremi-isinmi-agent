@@ -21,9 +21,9 @@ from uuid import uuid4
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
-from pydantic import SecretStr
 from pydantic import field_validator
 from pydantic import model_validator
+from pydantic import SecretStr
 
 
 class StrictModel(BaseModel):
@@ -74,48 +74,6 @@ def clean_tags(tags: list[str]) -> list[str]:
       normalized.append(value)
 
   return normalized
-
-
-class Alert(StrictModel):
-  id: str = Field(default_factory=new_id, description="Unique identifier for the alert.")
-  title: str = Field(..., min_length=1, max_length=200, description="Alert title.")
-  message: str = Field(..., min_length=1, description="Detailed alert message.")
-  severity: Literal["info", "warning", "critical"] = Field(..., description="Alert severity level.")
-  timestamp: DateTime = Field(default_factory=DateTime.now, description="When the alert was created.")
-  source: str | None = Field(None, max_length=100, description="Source of the alert.")
-  tags: list[str] = Field(
-    default_factory=list,
-    description=(
-      "Client grouping and filtering tags for alerts, such as device identifiers, UUIDs, source labels, "
-      "or workflow names."
-    ),
-  )
-  acknowledged: bool = Field(default=False, description="Whether the alert has been acknowledged.")
-  acknowledged_at: DateTime | None = Field(None, description="When the alert was acknowledged.")
-
-  @field_validator("tags")
-  @classmethod
-  def normalize_tags(cls, value: list[str]) -> list[str]:
-    return clean_tags(value)
-
-
-class AlertCreate(StrictModel):
-  title: str = Field(..., min_length=1, max_length=200, description="Alert title.")
-  message: str = Field(..., min_length=1, description="Detailed alert message.")
-  severity: Literal["info", "warning", "critical"] = Field(..., description="Alert severity level.")
-  source: str | None = Field(None, max_length=100, description="Source of the alert.")
-  tags: list[str] = Field(
-    default_factory=list,
-    description=(
-      "Client grouping and filtering tags for alerts, such as device identifiers, UUIDs, source labels, "
-      "or workflow names."
-    ),
-  )
-
-  @field_validator("tags")
-  @classmethod
-  def normalize_tags(cls, value: list[str]) -> list[str]:
-    return clean_tags(value)
 
 
 class Reminder(StrictModel):
@@ -271,7 +229,7 @@ class EventUpdate(StrictModel):
 
 class Notification(StrictModel):
   id: str = Field(default_factory=new_id, description="Unique identifier for the notification.")
-  type: Literal["alert", "reminder", "event"] = Field(..., description="Type of notification.")
+  type: Literal["reminder", "event"] = Field(..., description="Type of notification.")
   message: str = Field(..., min_length=1, description="Notification message.")
   entity_id: str = Field(..., description="ID of the related entity.")
   tags: list[str] = Field(
@@ -302,7 +260,7 @@ class AgentAction(StrictModel):
     "none",
   ] = Field(..., description="Type of action to perform.")
 
-  entity_type: Literal["reminder", "event", "alert", "none"] = Field(..., description="Type of entity to act upon.")
+  entity_type: Literal["reminder", "event", "none"] = Field(..., description="Type of entity to act upon.")
   data: dict[str, Any] = Field(default_factory=dict, description="Structured data for the action.")
   tags: list[str] = Field(
     default_factory=list,

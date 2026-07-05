@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import pytest
 from pydantic import ValidationError
 
-from isinmi.core.models import AlertCreate, AgentChatRequest, EventCreate
+from isinmi.core.models import AgentChatRequest, EventCreate, ReminderCreate
 from isinmi.core.settings import Settings
 
 
@@ -43,17 +43,17 @@ def test_llm_temperature_defaults_and_validates() -> None:
 
 
 def test_tags_are_normalized_and_deduplicated() -> None:
-  alert = AlertCreate(title="CPU", message="High load", severity="warning", tags=[" Work ", "work", "URGENT"])
-  assert alert.tags == ["work", "urgent"]
+  reminder = ReminderCreate(title="Call the dentist", datetime=datetime.now(), tags=[" Work ", "work", "URGENT"])
+  assert reminder.tags == ["work", "urgent"]
 
 
 def test_agent_chat_request_accepts_client_grouping_tags() -> None:
   request = AgentChatRequest(
     message="Remind me tomorrow at 9 AM to call the dentist",
-    tags=["Device:iPhone", "uuid:ABC-123", "device:iphone"],
+    tags=["Device:IPhone", "user_id:ABC-123", "device_id:iphone"],
   )
 
-  assert request.tags == ["device:iphone", "uuid:abc-123"]
+  assert request.tags == ["device:iphone", "user_id:abc-123", "device_id:iphone"]
 
 
 def test_event_end_must_be_after_start() -> None:

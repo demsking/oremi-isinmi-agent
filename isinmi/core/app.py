@@ -24,20 +24,17 @@ from fastapi_mcp import FastApiMCP
 
 from ..api import agent
 from ..api import caldav
-from ..api import alerts
 from ..api import docs
 from ..api import events
 from ..api import health
 from ..api import notifications
 from ..api import reminders
-from ..repositories.alert_repository import AlertRepository
+from ..integrations.caldav.service import CalDAVSyncService
 from ..repositories.caldav_repository import CalDAVRepository
 from ..repositories.event_repository import EventRepository
 from ..repositories.notification_repository import NotificationRepository
 from ..repositories.reminder_repository import ReminderRepository
-from ..integrations.caldav.service import CalDAVSyncService
 from ..services.agent_service import AgentService
-from ..services.alert_service import AlertService
 from ..services.event_service import EventService
 from ..services.notification_service import NotificationService
 from ..services.reminder_service import ReminderService
@@ -101,7 +98,6 @@ def create_app(settings: Settings | None = None) -> tuple[FastAPI, Settings]:
     app.state.db = db
     app.state.sse_manager = sse
     app.state.notification_service = notification_service
-    app.state.alert_service = AlertService(AlertRepository(db), notification_service)
     app.state.reminder_service = reminder_service
     app.state.event_service = EventService(event_repository, notification_service)
     app.state.caldav_service = CalDAVSyncService(
@@ -143,7 +139,6 @@ def create_app(settings: Settings | None = None) -> tuple[FastAPI, Settings]:
     },
     openapi_tags=[
       agent.API_TAG_METADATA,
-      alerts.API_TAG_METADATA,
       reminders.API_TAG_METADATA,
       events.API_TAG_METADATA,
       caldav.API_TAG_METADATA,
@@ -164,7 +159,6 @@ def create_app(settings: Settings | None = None) -> tuple[FastAPI, Settings]:
   prefix = "" if resolved_settings.api_prefix == "/" else resolved_settings.api_prefix
   api_prefix = f"{prefix}/api"
 
-  app.include_router(alerts.router, prefix=api_prefix)
   app.include_router(reminders.router, prefix=api_prefix)
   app.include_router(events.router, prefix=api_prefix)
   app.include_router(caldav.router, prefix=api_prefix)
@@ -180,7 +174,6 @@ def create_app(settings: Settings | None = None) -> tuple[FastAPI, Settings]:
     describe_all_responses=True,
     describe_full_response_schema=True,
     include_tags=[
-      alerts.API_TAG_METADATA["name"],
       reminders.API_TAG_METADATA["name"],
       events.API_TAG_METADATA["name"],
       notifications.API_TAG_METADATA["name"],

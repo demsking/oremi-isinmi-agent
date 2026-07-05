@@ -18,8 +18,8 @@ from typing import Literal
 
 from fastapi import APIRouter
 from fastapi import Body
-from fastapi import Query
 from fastapi import Path
+from fastapi import Query
 from fastapi import Request
 from fastapi.openapi.models import Example
 
@@ -50,7 +50,7 @@ REMINDER_CREATE_OPENAPI_EXAMPLES: dict[str, Example] = {
       "description": "Leave by 3:10 PM to avoid traffic.",
       "datetime": "2026-07-03T15:00:00",
       "recurring": "none",
-      "tags": ["uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de", "device_id:phone-1"],
+      "tags": ["device_id:phone-1", "user_id:alex"],
     },
   },
   "trash_night": {
@@ -95,7 +95,7 @@ REMINDER_RESPONSE_EXAMPLE = Reminder.model_validate(
     "description": "Leave by 3:10 PM to avoid traffic.",
     "datetime": "2026-07-03T15:00:00",
     "recurring": "none",
-    "tags": ["uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de", "device_id:phone-1"],
+    "tags": ["device_id:phone-1", "user_id:alex"],
     "status": "pending",
     "created_at": "2026-07-03T10:20:00",
     "notified_at": None,
@@ -109,7 +109,7 @@ REMINDER_UPDATE_OPENAPI_EXAMPLES: dict[str, Example] = {
     "value": {
       "title": "Pick up Amara and Noah from school",
       "description": "Bring the booster seat and park near the side gate.",
-      "tags": ["uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de", "device_id:phone-1"],
+      "tags": ["device_id:phone-1", "user_id:alex"],
     },
   },
   "reschedule": {

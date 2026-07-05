@@ -26,10 +26,10 @@ from pydantic_ai.exceptions import UnexpectedModelBehavior
 from ..core.database import Database
 from ..core.models import AgentAction
 from ..core.models import AgentChatRequest
-from ..core.models import StrictModel
 from ..core.models import clean_tags
 from ..core.models import new_id
 from ..core.models import ReminderCreate
+from ..core.models import StrictModel
 from ..core.orm import AgentConversationORM
 from ..core.settings import Settings
 from ..services.event_service import EventService

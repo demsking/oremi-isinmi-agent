@@ -27,7 +27,7 @@ API_TAG_METADATA = {
     "Natural-language personal-assistant interactions. The agent accepts Alexa-style requests, "
     "uses the configured LLM backend, and returns structured actions that can create or query reminders "
     "and events from conversational text. Optional tags can be attached by the client to group the chat "
-    "request and any resulting records by UUID, device, source, user, or workflow."
+    "request and any resulting records by device, user, source, or workflow."
   ),
 }
 
@@ -40,7 +40,7 @@ AGENT_CHAT_OPENAPI_EXAMPLES: dict[str, Example] = {
     "value": {
       "message": "Remind me tomorrow at 7 AM to pack Amara's lunch and tag it school",
       "context": {"timezone": "Europe/Paris"},
-      "tags": ["device_id:iphone-14", "uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de"],
+      "tags": ["device_id:iphone-14", "user_id:alex"],
     },
   },
   "create_event": {
@@ -58,7 +58,7 @@ AGENT_CHAT_OPENAPI_EXAMPLES: dict[str, Example] = {
     "value": {
       "message": "What family events do I have this weekend?",
       "context": {"timezone": "Europe/Paris"},
-      "tags": ["uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de", "device_id:web-app"],
+      "tags": ["device_id:web-app", "user_id:alex"],
     },
   },
   "query_bills": {
@@ -94,7 +94,7 @@ async def chat(
     ...,
     description=(
       "Natural language message, optional user context, and optional client grouping tags for the agent. "
-      "Use tags to group chat requests and any created reminders or related records by device, UUID, user, "
+      "Use tags to group chat requests and any created reminders or related records by device or user, "
       "source, or workflow."
     ),
     openapi_examples=AGENT_CHAT_OPENAPI_EXAMPLES,

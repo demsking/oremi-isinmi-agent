@@ -59,8 +59,8 @@ class Settings(BaseSettings):
 
   llm_system_prompt: str = Field(
     default=(
-      "You are Oremi, a friendly assistant that helps users manage their alerts, "
-      "reminders, and events. You understand natural language and can help users create, "
+      "You are Oremi, a friendly assistant that helps users manage their reminders "
+      "and events. You understand natural language and can help users create, "
       "update, or manage their time commitments. Return a concise result-oriented response_message. "
       "Do not ask for more details unless they are required to complete the action. "
       "For query, list, and search_by_tags actions, summarize the requested result in one short sentence."

@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Literal
 from typing import Annotated
+from typing import Literal
 
 from fastapi import APIRouter
-from fastapi import Query
 from fastapi import Path
+from fastapi import Query
 from fastapi import Request
 from fastapi.openapi.models import Example
 
@@ -28,20 +28,15 @@ from ..utils.validators import parse_tags_query
 API_TAG_METADATA = {
   "name": "Notifications Endpoints",
   "description": (
-    "Notification inbox operations for alerts, reminders, and events. Notifications are the user-facing "
-    "messages generated from scheduled reminders, calendar event reminders, and alerts. Use these endpoints "
-    "to build unread badges, notification centers, tag-filtered notification views, and read-state workflows."
+    "Notification inbox operations for reminders and events. Notifications are the user-facing messages "
+    "generated from scheduled reminders and calendar event reminders. Use these endpoints to build unread "
+    "badges, notification centers, tag-filtered notification views, and read-state workflows."
   ),
 }
 
 router = APIRouter(prefix="/notifications", tags=[API_TAG_METADATA["name"]])
 
 NOTIFICATION_LIST_QUERY_EXAMPLES: dict[str, Example] = {
-  "alerts": {
-    "summary": "Alert notifications",
-    "description": "Show alert notifications only.",
-    "value": "device_id:phone-1,user_id:alex",
-  },
   "unread": {
     "summary": "Unread notifications",
     "description": "Show only unread notifications.",
@@ -75,12 +70,11 @@ def service(request: Request) -> NotificationService:
 )
 async def list_notifications(
   request: Request,
-  type_: Literal["alert", "reminder", "event"] | None = Query(
+  type_: Literal["reminder", "event"] | None = Query(
     default=None,
     alias="type",
     description="Notification type filter.",
     openapi_examples={
-      "alert": {"summary": "Alert notifications", "value": "alert"},
       "reminder": {"summary": "Reminder notifications", "value": "reminder"},
       "event": {"summary": "Event notifications", "value": "event"},
     },

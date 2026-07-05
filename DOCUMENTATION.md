@@ -1,5 +1,5 @@
 **Oremi Isinmi Agent** is a lightweight, AI-powered personal assistant designed
-to help you manage your alerts, reminders, and events effortlessly. As a core
+to help you manage your reminders and events effortlessly. As a core
 subsystem of the Oremi personal assistant ecosystem, it combines the power of
 local or hosted LLMs with structured data management to provide intelligent,
 privacy-first time management.
@@ -18,15 +18,14 @@ This agent embodies that philosophy by offering:
 - **Natural Language Interaction**: Simply tell the agent what you need, and it understands
 - **Smart Organization**: Use tags to group and filter records by device, UUID, source, user, or workflow
 - **Privacy First**: Everything stays on your device with encrypted local storage
-- **Real-time Notifications**: Stay informed with Server-Sent Events for alerts and reminders
+- **Real-time Notifications**: Stay informed with Server-Sent Events for reminders and events
 - **AI-Powered Understanding**: Uses a configurable LLM backend with Ollama as the default
 
 ## Core Capabilities
 
 - **Intelligent Reminder Management**: Create, update, and track reminders with natural language
 - **Smart Event Scheduling**: Plan events with automatic reminder generation
-- **Alert Handling**: Manage critical notifications with acknowledgment workflows
-- **Tag-Based Organization**: Filter and find items instantly using client grouping tags stored on alerts, reminders, events, and notifications
+- **Tag-Based Organization**: Filter and find items instantly using client grouping tags stored on reminders, events, and notifications
 - **Real-time Notifications**: SSE streaming for immediate updates
 - **AI Conversation**: Chat with the agent to manage your schedule
 - **Encrypted Storage**: SQLAlchemy ORM with SQLCipher-backed SQLite and support for other SQL databases
@@ -36,24 +35,23 @@ This agent embodies that philosophy by offering:
 
 Tags are free-form client grouping keys used to organize and filter records
 across the application. They are stored as normalized JSON arrays and can be
-attached to alerts, reminders, events, notifications, and chat requests.
+attached to reminders, events, notifications, and chat requests.
 
 Use tags when you want to group records by values such as:
 
 - `device_id:iphone-14`
 - `device_id:web-app`
-- `uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de`
+- `user_id:alex`
 
 Tag-filtered endpoints match every requested tag, so
-`?tags=device_id:iphone-14,uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de` returns only records that
-carry both tags. The `/agent/chat` endpoint also accepts optional tags so a
-client can group the conversation itself and any reminder created from it.
+`?tags=device_id:iphone-14,user_id:alex` returns only records that carry both
+tags. The `/agent/chat` endpoint also accepts optional tags so a client can
+group the conversation itself and any reminder created from it.
 
 ## Use Cases
 
 - **Personal Time Management**: "Remind me to call the dentist tomorrow at 2pm"
 - **Event Planning**: "Schedule a team meeting for Friday at 10am, tag it as 'work'"
-- **Alert Monitoring**: "Create a critical alert for server downtime"
 - **Information Retrieval**: "Show me all my personal reminders for next week"
 - **Tag Organization**: "List all events tagged as 'urgent' and 'work'"
 
@@ -310,7 +308,6 @@ The MCP HTTP transport is mounted at:
 The MCP tool catalog is generated from the Oremi Isinmi API routes that belong
 to these tags:
 
-- `Alerts Endpoints`
 - `Reminders Endpoints`
 - `Events Endpoints`
 - `Notifications Endpoints`

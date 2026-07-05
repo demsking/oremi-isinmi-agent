@@ -35,27 +35,6 @@ class Base(DeclarativeBase):
   """Declarative base for all persisted entities."""
 
 
-class AlertORM(Base):
-  __tablename__ = "alerts"
-  __table_args__ = (
-    CheckConstraint("severity IN ('info', 'warning', 'critical')", name="ck_alerts_severity"),
-    Index("idx_alerts_timestamp", "timestamp"),
-    Index("idx_alerts_severity", "severity"),
-    Index("idx_alerts_acknowledged", "acknowledged"),
-    Index("idx_alerts_tags", "tags"),
-  )
-
-  id: Mapped[str] = mapped_column(String, primary_key=True)
-  title: Mapped[str] = mapped_column(String(200), nullable=False)
-  message: Mapped[str] = mapped_column(String, nullable=False)
-  severity: Mapped[str] = mapped_column(String(16), nullable=False)
-  timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-  source: Mapped[str | None] = mapped_column(String(100), nullable=True)
-  tags: Mapped[list[str]] = mapped_column(JsonType, nullable=False)
-  acknowledged: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-  acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-
-
 class ReminderORM(Base):
   __tablename__ = "reminders"
   __table_args__ = (
@@ -104,7 +83,7 @@ class EventORM(Base):
 class NotificationORM(Base):
   __tablename__ = "notifications"
   __table_args__ = (
-    CheckConstraint("type IN ('alert', 'reminder', 'event')", name="ck_notifications_type"),
+    CheckConstraint("type IN ('reminder', 'event')", name="ck_notifications_type"),
     Index("idx_notifications_timestamp", "timestamp"),
     Index("idx_notifications_type", "type"),
     Index("idx_notifications_entity_id", "entity_id"),

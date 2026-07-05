@@ -2,7 +2,7 @@
 
 [![Buy me a beer](https://img.shields.io/badge/Buy%20me-a%20beer-1f425f.svg)](https://www.buymeacoffee.com/demsking)
 
-Oremi Isinmi Agent is the alerts, reminders, scheduling, tags, and notification
+Oremi Isinmi Agent is the reminders, scheduling, tags, and notification
 subsystem for the Oremi personal assistant project. It uses FastAPI, Pydantic,
 SQLCipher-encrypted SQLite, Server-Sent Events, and Pydantic-AI with Ollama as
 the default backend.
@@ -23,7 +23,6 @@ Find the Oremi Isinmi Agent deployment and API documentation at
 
 - **Intelligent Reminder Management**: Create, update, and track reminders with natural language
 - **Smart Event Scheduling**: Plan events with automatic reminder generation
-- **Alert Handling**: Manage critical notifications with acknowledgment workflows
 - **Tag-Based Organization**: Filter and find items instantly using custom tags
 - **Real-time Notifications**: SSE streaming for immediate updates
 - **AI Conversation**: Chat with the agent to manage your schedule
@@ -34,14 +33,13 @@ Find the Oremi Isinmi Agent deployment and API documentation at
 
 - **Personal Time Management**: "Remind me to call the dentist tomorrow at 2pm"
 - **Event Planning**: "Schedule a team meeting for Friday at 10am, tag it as 'work'"
-- **Alert Monitoring**: "Create a critical alert for server downtime"
 - **Information Retrieval**: "Show me all my personal reminders for next week"
 - **Tag Organization**: "List all events tagged as 'urgent' and 'work'"
 
 ## Model Context Protocol
 
 The app exposes an MCP HTTP endpoint at `/mcp`. The available tools are derived
-from the `Alerts`, `Reminders`, `Events`, and `Notifications` API tags. `Agent`
+from the `Reminders`, `Events`, and `Notifications` API tags. `Agent`
 and `Health` are not exported as MCP tools.
 
 ## Contribute

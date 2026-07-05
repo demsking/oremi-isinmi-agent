@@ -19,8 +19,8 @@ from typing import Literal
 
 from fastapi import APIRouter
 from fastapi import Body
-from fastapi import Query
 from fastapi import Path
+from fastapi import Query
 from fastapi import Request
 from fastapi.openapi.models import Example
 from sse_starlette.sse import EventSourceResponse
@@ -37,8 +37,8 @@ API_TAG_METADATA = {
   "description": (
     "Calendar event scheduling and live event delivery. Use these endpoints to create personal appointments, "
     "family plans, work meetings, and tagged calendar entries. This group also exposes the Server-Sent Events "
-    "stream used by clients to receive new alerts, reminder notifications, event reminders, and keepalive pings "
-    "without polling."
+    "stream used by clients to receive reminder notifications, event reminders, and keepalive pings without "
+    "polling."
   ),
 }
 
@@ -55,12 +55,12 @@ SSE is a lightweight HTTP streaming protocol where the server keeps one response
 open and sends text frames as events happen. It is ideal for personal-assistant
 notifications because browsers support it natively with `EventSource`, it
 automatically reconnects, and it avoids repeated polling for new reminders or
-alerts.
+events.
 
 Clients may pass `tags=device_id:iphone-14,user_id:alex` to receive only events whose notification
 tags overlap the requested tag set. If no tags are provided, the client receives
-all live events. The stream emits named events such as `new_alert`,
-`new_reminder`, `new_event`, and `ping`. Event payloads are JSON strings.
+all live events. The stream emits named events such as `new_reminder`,
+`new_event`, and `ping`. Event payloads are JSON strings.
 
 **JavaScript example**
 
@@ -70,11 +70,6 @@ const stream = new EventSource("http://localhost:7337/api/events/stream?tags=dev
 stream.addEventListener("new_reminder", (event) => {
   const reminder = JSON.parse(event.data);
   console.log("Reminder:", reminder.message, reminder.tags);
-});
-
-stream.addEventListener("new_alert", (event) => {
-  const alert = JSON.parse(event.data);
-  console.log("Alert:", alert.message);
 });
 
 stream.addEventListener("ping", () => {
@@ -134,7 +129,7 @@ EVENT_CREATE_OPENAPI_EXAMPLES: dict[str, Example] = {
       "end_datetime": "2026-07-10T21:00:00",
       "location": "Bistro Lumiere",
       "attendees": ["Mom", "Tola"],
-      "tags": ["device_id:phone-1", "uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de"],
+      "tags": ["device_id:phone-1", "user_id:alex"],
       "reminders": [120, 30],
     },
   },
@@ -177,7 +172,7 @@ EVENT_UPDATE_OPENAPI_EXAMPLES: dict[str, Example] = {
     "value": {
       "location": "Le Jardin",
       "description": "Birthday dinner reservation moved to Le Jardin.",
-      "tags": ["device_id:phone-1", "uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de"],
+      "tags": ["device_id:phone-1", "user_id:alex"],
     },
   },
   "reschedule": {
@@ -201,7 +196,7 @@ EVENT_STREAM_QUERY_EXAMPLES: dict[str, Example] = {
   "family": {
     "summary": "Family events",
     "description": "Stream only events tagged for family planning.",
-    "value": "device_id:phone-1,uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de",
+    "value": "device_id:phone-1,user_id:alex",
   },
   "work": {
     "summary": "Work events",

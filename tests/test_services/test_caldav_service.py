@@ -54,13 +54,13 @@ async def test_caldav_render_event_ical_includes_categories(tmp_path: Path) -> N
       title="Team sync",
       start_datetime=datetime(2026, 7, 6, 9, 0, 0),
       end_datetime=datetime(2026, 7, 6, 9, 30, 0),
-      tags=["work", "device:web"],
+      tags=["work", "device_id:web"],
     )
     rendered = service._render_event_ical(Event(**event.model_dump()), remote_uid="event-123")
 
     assert "BEGIN:VCALENDAR" in rendered
     assert "SUMMARY:Team sync" in rendered
-    assert "CATEGORIES:work\\,device:web" in rendered
+    assert "CATEGORIES:work\\,device_id:web" in rendered
     assert "UID:event-123" in rendered
   finally:
     await database.dispose()

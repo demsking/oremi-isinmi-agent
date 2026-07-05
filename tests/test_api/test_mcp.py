@@ -14,6 +14,5 @@ def test_mcp_http_endpoint_and_tools() -> None:
 
   tool_names = {tool.name for tool in app.state.mcp.tools}
 
-  assert "create_alert" in tool_names
   assert "create_reminder" in tool_names
   assert "create_event" in tool_names

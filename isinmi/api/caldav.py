@@ -13,13 +13,14 @@
 # limitations under the License.
 # ==============================================================================
 from typing import Annotated
+
 from fastapi import APIRouter
 from fastapi import Body
-from fastapi import Query
+from fastapi import HTTPException
 from fastapi import Path
+from fastapi import Query
 from fastapi import Request
 from fastapi.openapi.models import Example
-from fastapi import HTTPException
 
 from ..core.models import CalDAVAccount
 from ..core.models import CalDAVAccountCreate
@@ -62,7 +63,7 @@ CALDAV_ACCOUNT_CREATE_OPENAPI_EXAMPLES: dict[str, Example] = {
       "calendar_url": "https://calendar.family.example/caldav/family/",
       "username": "family-admin",
       "password": "replace-with-an-app-password",
-      "tags": ["device_id:phone-1", "uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de"],
+      "tags": ["device_id:phone-1", "user_id:alex"],
       "is_active": True,
     },
   },
@@ -102,7 +103,7 @@ CALDAV_SYNC_TAG_QUERY_EXAMPLES: dict[str, Example] = {
   "family": {
     "summary": "Family events",
     "description": "Sync only family-tagged local events.",
-    "value": "device_id:phone-1,uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de",
+    "value": "device_id:phone-1,user_id:alex",
   },
 }
 

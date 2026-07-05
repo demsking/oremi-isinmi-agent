@@ -14,12 +14,14 @@
 # ==============================================================================
 from __future__ import annotations
 
+from typing import Literal
+
 from fastapi import HTTPException
 
+from ..core.models import clean_tags
 from ..core.models import Notification
 from ..repositories.notification_repository import NotificationRepository
 from ..sse.manager import SSEManager
-from ..core.models import clean_tags
 
 
 class NotificationService:
@@ -29,7 +31,13 @@ class NotificationService:
     self.repository = repository
     self.sse = sse
 
-  async def create(self, type_: str, message: str, entity_id: str, tags: list[str]) -> Notification:
+  async def create(
+    self,
+    type_: Literal["reminder", "event"],
+    message: str,
+    entity_id: str,
+    tags: list[str],
+  ) -> Notification:
     notification = Notification(type=type_, message=message, entity_id=entity_id, tags=tags)
     saved = await self.repository.create(notification)
 
@@ -39,7 +47,7 @@ class NotificationService:
 
   async def list(
     self,
-    type_: str | None,
+    type_: Literal["reminder", "event"] | None,
     tags: list[str],
     read_status: bool | None,
     limit: int,
