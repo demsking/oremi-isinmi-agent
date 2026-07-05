@@ -192,15 +192,6 @@ class AgentService:
 
     return clean_tags(tags)
 
-  async def suggestions(self) -> list[str]:
-    upcoming = await self.reminders.upcoming()
-    suggestions = ["Review unread notifications", "Tag related reminders for easier filtering"]
-
-    if upcoming:
-      suggestions.insert(0, f"You have {len(upcoming)} reminder(s) due in the next 24 hours")
-
-    return suggestions
-
   async def _save_conversation(self, request: AgentChatRequest, action: AgentAction) -> None:
     def _operation(session):
       session.add(

@@ -19,15 +19,14 @@ from fastapi.openapi.models import Example
 
 from ..core.models import AgentAction
 from ..core.models import AgentChatRequest
-from ..core.models import TagsRequest
 from ..services.agent_service import AgentService
 
 API_TAG_METADATA = {
   "name": "Agent Endpoints",
   "description": (
-    "Natural-language personal-assistant interactions. The agent accepts Alexa-style requests, uses the local "
-    "Ollama model through Pydantic-AI when available, returns structured actions, detects tags, and can create "
-    "or query reminders and events from conversational text."
+    "Natural-language personal-assistant interactions. The agent accepts Alexa-style requests, "
+    "uses LLM model through, and returns structured actions that can create or query reminders "
+    "and events from conversational text."
   ),
 }
 
@@ -68,33 +67,6 @@ AGENT_CHAT_OPENAPI_EXAMPLES: dict[str, Example] = {
   },
 }
 
-TAGS_REQUEST_OPENAPI_EXAMPLES: dict[str, Example] = {
-  "explicit_tags": {
-    "summary": "Extract explicit tags",
-    "description": "Extract tags named directly in a household reminder request.",
-    "value": {
-      "text": "Remind me to buy milk after work and tag it groceries and errands",
-      "existing_tags": ["family", "groceries", "errands", "health", "finance"],
-    },
-  },
-  "school_context": {
-    "summary": "Detect school context",
-    "description": "Infer a useful tag from a school-related voice command.",
-    "value": {
-      "text": "Remind me Friday morning to bring Noah's permission slip",
-      "existing_tags": ["family", "school", "kids", "forms"],
-    },
-  },
-  "health_context": {
-    "summary": "Detect health context",
-    "description": "Infer health tags from a medication or appointment request.",
-    "value": {
-      "text": "Remind me every night to take my blood pressure pill",
-      "existing_tags": ["health", "medication", "daily"],
-    },
-  },
-}
-
 
 def service(request: Request) -> AgentService:
   return request.app.state.agent_service
@@ -120,37 +92,3 @@ async def chat(
   ),
 ) -> AgentAction:
   return await service(request).chat(payload)
-
-
-@router.get(
-  "/suggestions",
-  response_model=list[str],
-  summary="Smart suggestions",
-  description=(
-    "Return simple smart suggestions based on the current reminder state and tag patterns. Clients can show "
-    "these suggestions in a dashboard, command palette, or assistant home screen to help the user decide what "
-    "to review next."
-  ),
-)
-async def suggestions(request: Request) -> list[str]:
-  return await service(request).suggestions()
-
-
-@router.post(
-  "/process-tags",
-  response_model=list[str],
-  summary="Extract tags",
-  description=(
-    "Extract useful tags from natural-language text without creating a reminder or event. Use this endpoint "
-    "to preview tagging, autocomplete organization labels, or classify assistant commands before saving them."
-  ),
-)
-async def process_tags(
-  request: Request,
-  payload: TagsRequest = Body(
-    ...,
-    description="Natural language text and optional existing tags to use for matching.",
-    openapi_examples=TAGS_REQUEST_OPENAPI_EXAMPLES,
-  ),
-) -> list[str]:
-  return service(request).extract_tags(payload)

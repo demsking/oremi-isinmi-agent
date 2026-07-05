@@ -12,7 +12,7 @@ def test_health_endpoint() -> None:
   from isinmi import app
 
   with TestClient(app) as client:
-    response = client.get("/api/health")
+    response = client.get("/health")
 
   assert response.status_code == 200
   assert response.json()["status"] == "ok"
