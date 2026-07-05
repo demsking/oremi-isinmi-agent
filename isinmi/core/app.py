@@ -99,7 +99,7 @@ def create_app(settings: Settings | None = None) -> tuple[FastAPI, Settings]:
     app.state.alert_service = AlertService(AlertRepository(db), notification_service)
     app.state.reminder_service = reminder_service
     app.state.event_service = EventService(EventRepository(db), notification_service)
-    app.state.agent_service = AgentService(resolved_settings, db, reminder_service)
+    app.state.agent_service = AgentService(resolved_settings, db, reminder_service, app.state.event_service)
 
     if resolved_settings.uses_ollama():
       await _pull_ollama_model(resolved_settings)
