@@ -9,10 +9,10 @@ pytestmark = pytest.mark.skipif(importlib.util.find_spec("sqlcipher3") is None, 
 
 
 def test_health_endpoint() -> None:
-  from isinmi.main import app
+  from isinmi import app
 
   with TestClient(app) as client:
-    response = client.get("/health")
+    response = client.get("/api/health")
 
   assert response.status_code == 200
   assert response.json()["status"] == "ok"

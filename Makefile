@@ -4,7 +4,7 @@ IMAGE_NAME := demsking/$(APP_NAME)
 
 COMPOSE_SERVICES := ollama
 
-.PHONY: help install run test docker-build docker-run docker-stop docker-logs clean
+.PHONY: help install run tests docker-build docker-run docker-stop docker-logs clean
 
 shell:
 	tmuxinator
@@ -20,19 +20,6 @@ logs:
 
 down:
 	docker compose down $(COMPOSE_SERVICES)
-
-stats:
-	docker compose stats
-
-help:
-	@echo "Oremi Isinmi Agent - Available commands"
-	@echo "  install          Install dependencies with uv"
-	@echo "  run              Run the application"
-	@echo "  test             Run tests"
-	@echo "  docker-build     Build Docker image"
-	@echo "  docker-run       Run Docker container"
-	@echo "  docker-stop      Stop Docker container"
-	@echo "  clean            Clean temporary files"
 
 install:
 	rm -rf .venv

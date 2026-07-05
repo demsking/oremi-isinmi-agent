@@ -39,7 +39,7 @@ async def static_asset(file_path: str) -> FileResponse:
   return FileResponse(asset)
 
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("/", include_in_schema=False, response_class=HTMLResponse)
 async def html_documentation():
   return f"""
     <!DOCTYPE html>

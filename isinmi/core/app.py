@@ -143,12 +143,13 @@ def create_app(settings: Settings | None = None) -> tuple[FastAPI, Settings]:
     return HTMLResponse(status_code=307, headers={"Location": docs.router.prefix})
 
   prefix = "" if resolved_settings.api_prefix == "/" else resolved_settings.api_prefix
+  api_prefix = f"{prefix}/api"
 
-  app.include_router(alerts.router, prefix=prefix)
-  app.include_router(reminders.router, prefix=prefix)
-  app.include_router(events.router, prefix=prefix)
-  app.include_router(notifications.router, prefix=prefix)
-  app.include_router(agent.router, prefix=prefix)
+  app.include_router(alerts.router, prefix=api_prefix)
+  app.include_router(reminders.router, prefix=api_prefix)
+  app.include_router(events.router, prefix=api_prefix)
+  app.include_router(notifications.router, prefix=api_prefix)
+  app.include_router(agent.router, prefix=api_prefix)
   app.include_router(health.router, prefix=prefix)
   app.include_router(docs.router, prefix=prefix)
 

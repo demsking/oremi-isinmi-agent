@@ -8,7 +8,7 @@ pytestmark = pytest.mark.skipif(importlib.util.find_spec("sqlcipher3") is None, 
 
 
 def test_mcp_http_endpoint_and_tools() -> None:
-  from isinmi.main import app
+  from isinmi import app
 
   assert any(getattr(route, "path", None) == "/mcp" for route in app.routes)
 
