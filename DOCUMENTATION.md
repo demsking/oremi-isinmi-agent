@@ -40,15 +40,14 @@ attached to alerts, reminders, events, notifications, and chat requests.
 
 Use tags when you want to group records by values such as:
 
-- `device:iphone`
-- `device:web`
+- `device_id:iphone-14`
+- `device_id:web-app`
 - `uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de`
 
 Tag-filtered endpoints match every requested tag, so
-`?tags=device:iphone,uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de` returns only
-records that carry both tags. The `/agent/chat` endpoint also accepts optional
-tags so a client can group the conversation itself and any reminder created
-from it.
+`?tags=device_id:iphone-14,uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de` returns only records that
+carry both tags. The `/agent/chat` endpoint also accepts optional tags so a
+client can group the conversation itself and any reminder created from it.
 
 ## Use Cases
 
@@ -252,6 +251,51 @@ OREMI_ISINMI_OLLAMA_BASE_URL=http://ollama:11434
 The persistence layer uses SQLAlchemy ORM instead of hand-written SQL queries.
 SQLite remains encrypted through SQLCipher, while the same repositories can be
 backed by PostgreSQL or MariaDB when you need a server database.
+
+## CalDAV Integration
+
+CalDAV is integrated as a dedicated sync layer on top of the local event store.
+Local events remain the source of truth inside Oremi Isinmi, while CalDAV acts
+as an optional remote calendar target.
+
+What the integration does:
+
+- Stores CalDAV accounts in the encrypted local database
+- Synchronizes local events to remote calendars using iCalendar `VEVENT` payloads
+- Uses the local event `id` as the CalDAV `UID`
+- Maps event fields as follows:
+  - `title` -> `SUMMARY`
+  - `description` -> `DESCRIPTION`
+  - `location` -> `LOCATION`
+  - `tags` -> `CATEGORIES`
+  - `attendees` -> `ATTENDEE`
+- Filters which events are synchronized by CalDAV account tags
+- Keeps sync links locally so updates and deletions can reuse the same remote resource
+
+What it does not do yet:
+
+- It does not import remote CalDAV changes back into the local database
+- It does not try to auto-discover a calendar home set from the server URL
+- It does not force the local request to fail if the remote CalDAV sync fails
+
+Tag-based CalDAV routing:
+
+- An account with no tags receives every local event
+- An account with tags only receives events whose tags contain all of those values
+- Example:
+  - account tags: `["device_id:laptop-1"]`
+  - event tags: `["device_id:laptop-1", "user_id:alex"]`
+  - result: event is synchronized
+  - event tags: `["device_id:phone-1"]`
+  - result: event is skipped
+
+Operational notes:
+
+- CalDAV credentials are stored inside the encrypted SQLCipher database
+- The integration uses the configured `calendar_url` directly for writes
+- Remote sync uses `PUT` for create/update and `DELETE` for removals
+- The current implementation is best-effort and logs remote sync errors without
+  breaking the local event workflow
 
 ### MCP Integration
 

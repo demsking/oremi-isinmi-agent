@@ -13,10 +13,13 @@
 # limitations under the License.
 # ==============================================================================
 from typing import Literal
+from typing import Annotated
 
 from fastapi import APIRouter
 from fastapi import Query
+from fastapi import Path
 from fastapi import Request
+from fastapi.openapi.models import Example
 
 from ..core.models import Notification
 from ..services.notification_service import NotificationService
@@ -32,6 +35,27 @@ API_TAG_METADATA = {
 }
 
 router = APIRouter(prefix="/notifications", tags=[API_TAG_METADATA["name"]])
+
+NOTIFICATION_LIST_QUERY_EXAMPLES: dict[str, Example] = {
+  "alerts": {
+    "summary": "Alert notifications",
+    "description": "Show alert notifications only.",
+    "value": "device_id:phone-1,user_id:alex",
+  },
+  "unread": {
+    "summary": "Unread notifications",
+    "description": "Show only unread notifications.",
+    "value": False,
+  },
+}
+
+NOTIFICATION_ID_PATH_EXAMPLES: dict[str, Example] = {
+  "sample_notification_id": {
+    "summary": "Notification identifier",
+    "description": "A notification ID returned by the API.",
+    "value": "notification_123",
+  }
+}
 
 
 def service(request: Request) -> NotificationService:
@@ -55,11 +79,44 @@ async def list_notifications(
     default=None,
     alias="type",
     description="Notification type filter.",
+    openapi_examples={
+      "alert": {"summary": "Alert notifications", "value": "alert"},
+      "reminder": {"summary": "Reminder notifications", "value": "reminder"},
+      "event": {"summary": "Event notifications", "value": "event"},
+    },
   ),
-  tags: str | None = Query(default=None, description="Comma-separated tags."),
-  read_status: bool | None = Query(default=None, description="Read status filter."),
-  limit: int = Query(default=100, ge=1, le=500, description="Maximum records to return."),
-  offset: int = Query(default=0, ge=0, description="Number of records to skip."),
+  tags: str | None = Query(
+    default=None,
+    description="Comma-separated tags.",
+    openapi_examples=NOTIFICATION_LIST_QUERY_EXAMPLES,
+  ),
+  read_status: bool | None = Query(
+    default=None,
+    description="Read status filter.",
+    openapi_examples={
+      "unread": {"summary": "Unread notifications", "value": False},
+      "read": {"summary": "Read notifications", "value": True},
+    },
+  ),
+  limit: int = Query(
+    default=100,
+    ge=1,
+    le=500,
+    description="Maximum records to return.",
+    openapi_examples={
+      "default": {"summary": "Default page size", "value": 100},
+      "compact": {"summary": "Compact page", "value": 25},
+    },
+  ),
+  offset: int = Query(
+    default=0,
+    ge=0,
+    description="Number of records to skip.",
+    openapi_examples={
+      "first_page": {"summary": "First page", "value": 0},
+      "later_page": {"summary": "Later page", "value": 50},
+    },
+  ),
 ) -> list[Notification]:
   return await service(request).list(type_, parse_tags_query(tags), read_status, limit, offset)
 
@@ -87,7 +144,13 @@ async def unread_count(request: Request) -> dict[str, int]:
     "one notification from a feed without clearing the rest."
   ),
 )
-async def mark_read(notification_id: str, request: Request) -> Notification:
+async def mark_read(
+  notification_id: Annotated[
+    str,
+    Path(..., description="Notification identifier.", openapi_examples=NOTIFICATION_ID_PATH_EXAMPLES),
+  ],
+  request: Request,
+) -> Notification:
   return await service(request).mark_read(notification_id)
 
 
@@ -103,6 +166,13 @@ async def mark_read(notification_id: str, request: Request) -> Notification:
 )
 async def mark_all_read(
   request: Request,
-  tags: str | None = Query(default=None, description="Comma-separated tags to scope the read operation."),
+  tags: str | None = Query(
+    default=None,
+    description="Comma-separated tags to scope the read operation.",
+    openapi_examples={
+      "work": {"summary": "Device-specific notifications", "value": "device_id:web-app,user_id:alex"},
+      "device": {"summary": "User-scoped notifications", "value": "device_id:phone-1,user_id:alex"},
+    },
+  ),
 ) -> dict[str, int | str]:
   return await service(request).mark_all_read(parse_tags_query(tags))

@@ -14,11 +14,13 @@
 # ==============================================================================
 import asyncio
 from datetime import datetime
+from typing import Annotated
 from typing import Literal
 
 from fastapi import APIRouter
 from fastapi import Body
 from fastapi import Query
+from fastapi import Path
 from fastapi import Request
 from fastapi.openapi.models import Example
 from sse_starlette.sse import EventSourceResponse
@@ -55,7 +57,7 @@ notifications because browsers support it natively with `EventSource`, it
 automatically reconnects, and it avoids repeated polling for new reminders or
 alerts.
 
-Clients may pass `tags=work,urgent` to receive only events whose notification
+Clients may pass `tags=device_id:iphone-14,user_id:alex` to receive only events whose notification
 tags overlap the requested tag set. If no tags are provided, the client receives
 all live events. The stream emits named events such as `new_alert`,
 `new_reminder`, `new_event`, and `ping`. Event payloads are JSON strings.
@@ -63,7 +65,7 @@ all live events. The stream emits named events such as `new_alert`,
 **JavaScript example**
 
 ```javascript
-const stream = new EventSource("http://localhost:7337/api/events/stream?tags=family,school");
+const stream = new EventSource("http://localhost:7337/api/events/stream?tags=device_id:iphone-14,user_id:alex");
 
 stream.addEventListener("new_reminder", (event) => {
   const reminder = JSON.parse(event.data);
@@ -90,7 +92,7 @@ stream.onerror = () => {
 import json
 import httpx
 
-url = "http://localhost:7337/api/events/stream?tags=family,school"
+url = "http://localhost:7337/api/events/stream?tags=device_id:iphone-14,user_id:alex"
 
 with httpx.stream("GET", url, timeout=None) as response:
   response.raise_for_status()
@@ -118,7 +120,7 @@ EVENT_CREATE_OPENAPI_EXAMPLES: dict[str, Example] = {
       "end_datetime": "2026-07-06T10:15:00",
       "location": "City Health Clinic",
       "attendees": [],
-      "tags": ["health", "personal"],
+      "tags": ["device_id:phone-1", "user_id:alex"],
       "reminders": [30, 60],
     },
   },
@@ -132,7 +134,7 @@ EVENT_CREATE_OPENAPI_EXAMPLES: dict[str, Example] = {
       "end_datetime": "2026-07-10T21:00:00",
       "location": "Bistro Lumiere",
       "attendees": ["Mom", "Tola"],
-      "tags": ["family", "birthday"],
+      "tags": ["device_id:phone-1", "uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de"],
       "reminders": [120, 30],
     },
   },
@@ -146,7 +148,7 @@ EVENT_CREATE_OPENAPI_EXAMPLES: dict[str, Example] = {
       "end_datetime": "2026-07-06T11:30:00",
       "location": "Zoom",
       "attendees": ["ada@example.com", "marc@example.com"],
-      "tags": ["work", "meeting"],
+      "tags": ["device_id:laptop-1", "user_id:alex"],
       "reminders": [10],
     },
   },
@@ -161,7 +163,7 @@ EVENT_RESPONSE_EXAMPLE = Event.model_validate(
     "end_datetime": "2026-07-06T10:15:00",
     "location": "City Health Clinic",
     "attendees": [],
-    "tags": ["health", "personal"],
+    "tags": ["device_id:phone-1", "user_id:alex"],
     "reminders": [30, 60],
     "status": "scheduled",
     "created_at": "2026-07-03T10:20:00",
@@ -175,7 +177,7 @@ EVENT_UPDATE_OPENAPI_EXAMPLES: dict[str, Example] = {
     "value": {
       "location": "Le Jardin",
       "description": "Birthday dinner reservation moved to Le Jardin.",
-      "tags": ["family", "birthday", "reservation"],
+      "tags": ["device_id:phone-1", "uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de"],
     },
   },
   "reschedule": {
@@ -195,6 +197,40 @@ EVENT_UPDATE_OPENAPI_EXAMPLES: dict[str, Example] = {
   },
 }
 
+EVENT_STREAM_QUERY_EXAMPLES: dict[str, Example] = {
+  "family": {
+    "summary": "Family events",
+    "description": "Stream only events tagged for family planning.",
+    "value": "device_id:phone-1,uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de",
+  },
+  "work": {
+    "summary": "Work events",
+    "description": "Stream only work-related notification events.",
+    "value": "device_id:laptop-1,user_id:alex",
+  },
+}
+
+EVENT_LIST_QUERY_EXAMPLES: dict[str, Example] = {
+  "work_week": {
+    "summary": "Work week events",
+    "description": "Filter events that happen during the work week.",
+    "value": "2026-07-06T00:00:00,2026-07-10T23:59:59",
+  },
+  "tagged": {
+    "summary": "Tagged events",
+    "description": "Filter events by tags only.",
+    "value": "device_id:laptop-1,user_id:alex",
+  },
+}
+
+EVENT_ID_PATH_EXAMPLES: dict[str, Example] = {
+  "sample_event_id": {
+    "summary": "Event identifier",
+    "description": "A real-looking event ID returned by the API.",
+    "value": "event_123",
+  }
+}
+
 
 def service(request: Request) -> EventService:
   return request.app.state.event_service
@@ -209,7 +245,11 @@ def service(request: Request) -> EventService:
 )
 async def stream_events(
   request: Request,
-  tags: str | None = Query(default=None, description="Comma-separated tag filter."),
+  tags: str | None = Query(
+    default=None,
+    description="Comma-separated tag filter.",
+    openapi_examples=EVENT_STREAM_QUERY_EXAMPLES,
+  ),
 ) -> EventSourceResponse:
   manager = request.app.state.sse_manager
   subscriber = await manager.subscribe(parse_tags_query(tags))
@@ -273,12 +313,53 @@ async def list_events(
   status: Literal["scheduled", "ongoing", "completed", "cancelled"] | None = Query(
     default=None,
     description="Event status filter.",
+    openapi_examples={
+      "scheduled": {"summary": "Scheduled events", "value": "scheduled"},
+      "ongoing": {"summary": "Ongoing events", "value": "ongoing"},
+      "completed": {"summary": "Completed events", "value": "completed"},
+      "cancelled": {"summary": "Cancelled events", "value": "cancelled"},
+    },
   ),
-  start: datetime | None = Query(default=None, description="Start datetime filter."),
-  end: datetime | None = Query(default=None, description="End datetime filter."),
-  tags: str | None = Query(default=None, description="Comma-separated tags."),
-  limit: int = Query(default=100, ge=1, le=500, description="Maximum records to return."),
-  offset: int = Query(default=0, ge=0, description="Number of records to skip."),
+  start: datetime | None = Query(
+    default=None,
+    description="Start datetime filter.",
+    openapi_examples={
+      "week_start": {"summary": "Week start", "value": "2026-07-06T00:00:00"},
+      "tomorrow": {"summary": "Tomorrow morning", "value": "2026-07-04T08:00:00"},
+    },
+  ),
+  end: datetime | None = Query(
+    default=None,
+    description="End datetime filter.",
+    openapi_examples={
+      "week_end": {"summary": "Week end", "value": "2026-07-12T23:59:59"},
+      "tomorrow_end": {"summary": "Tomorrow evening", "value": "2026-07-04T20:00:00"},
+    },
+  ),
+  tags: str | None = Query(
+    default=None,
+    description="Comma-separated tags.",
+    openapi_examples=EVENT_LIST_QUERY_EXAMPLES,
+  ),
+  limit: int = Query(
+    default=100,
+    ge=1,
+    le=500,
+    description="Maximum records to return.",
+    openapi_examples={
+      "default": {"summary": "Default page size", "value": 100},
+      "compact": {"summary": "Compact page", "value": 25},
+    },
+  ),
+  offset: int = Query(
+    default=0,
+    ge=0,
+    description="Number of records to skip.",
+    openapi_examples={
+      "first_page": {"summary": "First page", "value": 0},
+      "later_page": {"summary": "Later page", "value": 50},
+    },
+  ),
 ) -> list[Event]:
   ensure_date_range(start, end)
   return await service(request).list(status, start, end, parse_tags_query(tags), limit, offset)
@@ -294,7 +375,10 @@ async def list_events(
     "editing, cancelling, or confirming a scheduled commitment."
   ),
 )
-async def get_event(event_id: str, request: Request) -> Event:
+async def get_event(
+  event_id: Annotated[str, Path(..., description="Event identifier.", openapi_examples=EVENT_ID_PATH_EXAMPLES)],
+  request: Request,
+) -> Event:
   return await service(request).get(event_id)
 
 
@@ -309,7 +393,7 @@ async def get_event(event_id: str, request: Request) -> Event:
   ),
 )
 async def update_event(
-  event_id: str,
+  event_id: Annotated[str, Path(..., description="Event identifier.", openapi_examples=EVENT_ID_PATH_EXAMPLES)],
   request: Request,
   payload: EventUpdate = Body(
     ...,
@@ -329,5 +413,8 @@ async def update_event(
     "or include in calendar and tag searches."
   ),
 )
-async def delete_event(event_id: str, request: Request) -> dict[str, str]:
+async def delete_event(
+  event_id: Annotated[str, Path(..., description="Event identifier.", openapi_examples=EVENT_ID_PATH_EXAMPLES)],
+  request: Request,
+) -> dict[str, str]:
   return await service(request).delete(event_id)

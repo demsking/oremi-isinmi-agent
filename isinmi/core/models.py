@@ -21,6 +21,7 @@ from uuid import uuid4
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import Field
+from pydantic import SecretStr
 from pydantic import field_validator
 from pydantic import model_validator
 
@@ -335,3 +336,89 @@ class AgentChatRequest(StrictModel):
   @classmethod
   def normalize_tags(cls, value: list[str]) -> list[str]:
     return clean_tags(value)
+
+
+class CalDAVAccount(StrictModel):
+  id: str = Field(default_factory=new_id, description="Unique identifier for the CalDAV account.")
+  name: str = Field(..., min_length=1, max_length=200, description="Human-friendly account name.")
+  base_url: str = Field(..., min_length=1, max_length=500, description="CalDAV server base URL.")
+  calendar_url: str = Field(..., min_length=1, max_length=500, description="CalDAV calendar collection URL.")
+  username: str = Field(..., min_length=1, max_length=200, description="CalDAV username.")
+  tags: list[str] = Field(
+    default_factory=list,
+    description=(
+      "Client grouping and filtering tags used to decide which events are synchronized "
+      "through this CalDAV account."
+    ),
+  )
+  is_active: bool = Field(default=True, description="Whether the CalDAV account is currently active.")
+  sync_token: str | None = Field(None, description="Last CalDAV sync token, when supported by the server.")
+  last_synced_at: DateTime | None = Field(None, description="When the account was last synchronized.")
+  last_sync_error: str | None = Field(None, max_length=2000, description="Last sync error message, if any.")
+  created_at: DateTime = Field(default_factory=DateTime.now, description="When the account was created.")
+  updated_at: DateTime = Field(default_factory=DateTime.now, description="When the account was last updated.")
+
+  @field_validator("tags")
+  @classmethod
+  def normalize_tags(cls, value: list[str]) -> list[str]:
+    return clean_tags(value)
+
+
+class CalDAVAccountCreate(StrictModel):
+  name: str = Field(..., min_length=1, max_length=200, description="Human-friendly account name.")
+  base_url: str = Field(..., min_length=1, max_length=500, description="CalDAV server base URL.")
+  calendar_url: str = Field(..., min_length=1, max_length=500, description="CalDAV calendar collection URL.")
+  username: str = Field(..., min_length=1, max_length=200, description="CalDAV username.")
+  password: SecretStr = Field(..., description="CalDAV password or application-specific token.")
+  tags: list[str] = Field(
+    default_factory=list,
+    description=(
+      "Client grouping and filtering tags used to decide which events are synchronized "
+      "through this CalDAV account."
+    ),
+  )
+  is_active: bool = Field(default=True, description="Whether the CalDAV account is currently active.")
+
+  @field_validator("tags")
+  @classmethod
+  def normalize_tags(cls, value: list[str]) -> list[str]:
+    return clean_tags(value)
+
+
+class CalDAVAccountUpdate(StrictModel):
+  name: str | None = Field(None, min_length=1, max_length=200, description="Updated account name.")
+  base_url: str | None = Field(None, min_length=1, max_length=500, description="Updated CalDAV server base URL.")
+  calendar_url: str | None = Field(
+    None,
+    min_length=1,
+    max_length=500,
+    description="Updated CalDAV calendar collection URL.",
+  )
+  username: str | None = Field(None, min_length=1, max_length=200, description="Updated CalDAV username.")
+  password: SecretStr | None = Field(None, description="Updated CalDAV password or token.")
+  tags: list[str] | None = Field(
+    None,
+    description=(
+      "Updated client grouping and filtering tags used to decide which events are synchronized "
+      "through this CalDAV account."
+    ),
+  )
+  is_active: bool | None = Field(None, description="Updated account activation state.")
+  sync_token: str | None = Field(None, description="Updated CalDAV sync token.")
+  last_synced_at: DateTime | None = Field(None, description="Updated synchronization timestamp.")
+  last_sync_error: str | None = Field(None, max_length=2000, description="Updated sync error message.")
+
+  @field_validator("tags")
+  @classmethod
+  def normalize_tags(cls, value: list[str] | None) -> list[str] | None:
+    return clean_tags(value) if value is not None else None
+
+
+class CalDAVSyncResult(StrictModel):
+  account_id: str = Field(..., description="CalDAV account identifier.")
+  event_id: str = Field(..., description="Local event identifier.")
+  remote_uid: str | None = Field(None, description="Remote CalDAV UID.")
+  remote_href: str | None = Field(None, description="Remote CalDAV resource URL.")
+  etag: str | None = Field(None, description="Remote entity tag.")
+  status: Literal["synced", "deleted", "skipped", "failed"] = Field(..., description="Sync outcome.")
+  message: str | None = Field(None, description="Additional sync details or error message.")

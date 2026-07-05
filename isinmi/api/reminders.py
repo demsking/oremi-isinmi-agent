@@ -13,11 +13,13 @@
 # limitations under the License.
 # ==============================================================================
 from datetime import datetime
+from typing import Annotated
 from typing import Literal
 
 from fastapi import APIRouter
 from fastapi import Body
 from fastapi import Query
+from fastapi import Path
 from fastapi import Request
 from fastapi.openapi.models import Example
 
@@ -48,7 +50,7 @@ REMINDER_CREATE_OPENAPI_EXAMPLES: dict[str, Example] = {
       "description": "Leave by 3:10 PM to avoid traffic.",
       "datetime": "2026-07-03T15:00:00",
       "recurring": "none",
-      "tags": ["family", "school"],
+      "tags": ["uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de", "device_id:phone-1"],
     },
   },
   "trash_night": {
@@ -59,7 +61,7 @@ REMINDER_CREATE_OPENAPI_EXAMPLES: dict[str, Example] = {
       "description": "Put recycling and trash outside after dinner.",
       "datetime": "2026-07-07T19:30:00",
       "recurring": "weekly",
-      "tags": ["home", "chores"],
+      "tags": ["device_id:kitchen-hub", "user_id:alex"],
     },
   },
   "daily_medication": {
@@ -70,7 +72,7 @@ REMINDER_CREATE_OPENAPI_EXAMPLES: dict[str, Example] = {
       "description": "Take one tablet with water after dinner.",
       "datetime": "2026-07-03T20:00:00",
       "recurring": "daily",
-      "tags": ["health"],
+      "tags": ["device_id:phone-1", "user_id:alex"],
     },
   },
   "bill_due": {
@@ -81,7 +83,7 @@ REMINDER_CREATE_OPENAPI_EXAMPLES: dict[str, Example] = {
       "description": "Pay before the due date to avoid late fees.",
       "datetime": "2026-07-25T09:00:00",
       "recurring": "monthly",
-      "tags": ["finance", "bills"],
+      "tags": ["device_id:web-app", "user_id:alex"],
     },
   },
 }
@@ -93,7 +95,7 @@ REMINDER_RESPONSE_EXAMPLE = Reminder.model_validate(
     "description": "Leave by 3:10 PM to avoid traffic.",
     "datetime": "2026-07-03T15:00:00",
     "recurring": "none",
-    "tags": ["family", "school"],
+    "tags": ["uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de", "device_id:phone-1"],
     "status": "pending",
     "created_at": "2026-07-03T10:20:00",
     "notified_at": None,
@@ -107,7 +109,7 @@ REMINDER_UPDATE_OPENAPI_EXAMPLES: dict[str, Example] = {
     "value": {
       "title": "Pick up Amara and Noah from school",
       "description": "Bring the booster seat and park near the side gate.",
-      "tags": ["family", "school", "pickup"],
+      "tags": ["uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de", "device_id:phone-1"],
     },
   },
   "reschedule": {
@@ -124,6 +126,32 @@ REMINDER_UPDATE_OPENAPI_EXAMPLES: dict[str, Example] = {
       "status": "dismissed",
     },
   },
+}
+
+REMINDER_LIST_QUERY_EXAMPLES: dict[str, Example] = {
+  "today": {
+    "summary": "Today's reminders",
+    "description": "Show reminders due today.",
+    "value": "2026-07-03T00:00:00,2026-07-03T23:59:59",
+  },
+  "home": {
+    "summary": "Home reminders",
+    "description": "Filter reminders tagged for home organization.",
+    "value": "device_id:phone-1,user_id:alex",
+  },
+  "upcoming": {
+    "summary": "Upcoming reminders",
+    "description": "List pending reminders due within the next 24 hours.",
+    "value": "true",
+  },
+}
+
+REMINDER_ID_PATH_EXAMPLES: dict[str, Example] = {
+  "sample_reminder_id": {
+    "summary": "Reminder identifier",
+    "description": "A reminder ID returned by the API.",
+    "value": "reminder_123",
+  }
 }
 
 
@@ -182,16 +210,60 @@ async def list_reminders(
   status: Literal["pending", "completed", "dismissed"] | None = Query(
     default=None,
     description="Reminder status filter.",
+    openapi_examples={
+      "pending": {"summary": "Pending reminders", "value": "pending"},
+      "completed": {"summary": "Completed reminders", "value": "completed"},
+      "dismissed": {"summary": "Dismissed reminders", "value": "dismissed"},
+    },
   ),
-  start: datetime | None = Query(default=None, description="Start datetime filter."),
-  end: datetime | None = Query(default=None, description="End datetime filter."),
-  tags: str | None = Query(default=None, description="Comma-separated tags."),
+  start: datetime | None = Query(
+    default=None,
+    description="Start datetime filter.",
+    openapi_examples={
+      "morning": {"summary": "From morning", "value": "2026-07-03T08:00:00"},
+      "week_start": {"summary": "Week start", "value": "2026-07-06T00:00:00"},
+    },
+  ),
+  end: datetime | None = Query(
+    default=None,
+    description="End datetime filter.",
+    openapi_examples={
+      "evening": {"summary": "Until evening", "value": "2026-07-03T20:00:00"},
+      "week_end": {"summary": "Week end", "value": "2026-07-12T23:59:59"},
+    },
+  ),
+  tags: str | None = Query(
+    default=None,
+    description="Comma-separated tags, for example device_id:phone-1,user_id:alex.",
+    openapi_examples=REMINDER_LIST_QUERY_EXAMPLES,
+  ),
   upcoming: bool = Query(
     default=False,
     description="If true, return pending reminders due in the next 24 hours.",
+    openapi_examples={
+      "default": {"summary": "Do not limit to upcoming", "value": False},
+      "upcoming": {"summary": "Only upcoming reminders", "value": True},
+    },
   ),
-  limit: int = Query(default=100, ge=1, le=500, description="Maximum records to return."),
-  offset: int = Query(default=0, ge=0, description="Number of records to skip."),
+  limit: int = Query(
+    default=100,
+    ge=1,
+    le=500,
+    description="Maximum records to return.",
+    openapi_examples={
+      "default": {"summary": "Default page size", "value": 100},
+      "compact": {"summary": "Compact page", "value": 10},
+    },
+  ),
+  offset: int = Query(
+    default=0,
+    ge=0,
+    description="Number of records to skip.",
+    openapi_examples={
+      "first_page": {"summary": "First page", "value": 0},
+      "later_page": {"summary": "Later page", "value": 30},
+    },
+  ),
 ) -> list[Reminder]:
   """
   This endpoint allows you to retrieve a list of reminders based on various filters.
@@ -216,7 +288,10 @@ async def list_reminders(
   ),
 )
 async def update_reminder(
-  reminder_id: str,
+  reminder_id: Annotated[
+    str,
+    Path(..., description="Reminder identifier.", openapi_examples=REMINDER_ID_PATH_EXAMPLES),
+  ],
   request: Request,
   payload: ReminderUpdate = Body(
     ...,
@@ -237,7 +312,13 @@ async def update_reminder(
     "be filtered separately from pending or dismissed reminders."
   ),
 )
-async def complete_reminder(reminder_id: str, request: Request) -> Reminder:
+async def complete_reminder(
+  reminder_id: Annotated[
+    str,
+    Path(..., description="Reminder identifier.", openapi_examples=REMINDER_ID_PATH_EXAMPLES),
+  ],
+  request: Request,
+) -> Reminder:
   return await service(request).complete(reminder_id)
 
 
@@ -250,5 +331,11 @@ async def complete_reminder(reminder_id: str, request: Request) -> Reminder:
     "marking it completed or dismissed."
   ),
 )
-async def delete_reminder(reminder_id: str, request: Request) -> dict[str, str]:
+async def delete_reminder(
+  reminder_id: Annotated[
+    str,
+    Path(..., description="Reminder identifier.", openapi_examples=REMINDER_ID_PATH_EXAMPLES),
+  ],
+  request: Request,
+) -> dict[str, str]:
   return await service(request).delete(reminder_id)

@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import logging
 
 from fastapi import HTTPException
 
@@ -24,6 +25,8 @@ from ..core.models import EventUpdate
 from ..repositories.event_repository import EventRepository
 from ..services.notification_service import NotificationService
 
+logger = logging.getLogger(__name__)
+
 
 class EventService:
   """Business logic for events."""
@@ -31,12 +34,19 @@ class EventService:
   def __init__(self, repository: EventRepository, notifications: NotificationService) -> None:
     self.repository = repository
     self.notifications = notifications
+    self.caldav_sync_service = None
+
+  def set_caldav_sync_service(self, caldav_sync_service: object | None) -> None:
+    """Attach an optional CalDAV synchronization service."""
+
+    self.caldav_sync_service = caldav_sync_service
 
   async def create(self, payload: EventCreate) -> Event:
     event = Event(**payload.model_dump())
     saved = await self.repository.create(event)
 
     await self.notifications.create("event", f"Event scheduled: {saved.title}", saved.id, saved.tags)
+    await self._sync_event(saved)
 
     return saved
 
@@ -65,9 +75,30 @@ class EventService:
     if not event:
       raise HTTPException(status_code=404, detail="Event not found")
 
+    await self._sync_event(event)
+
     return event
 
   async def delete(self, event_id: str) -> dict[str, str]:
     await self.repository.delete(event_id)
+    await self._delete_remote_event(event_id)
 
     return {"status": "deleted"}
+
+  async def _sync_event(self, event: Event) -> None:
+    if self.caldav_sync_service is None:
+      return
+
+    try:
+      await self.caldav_sync_service.sync_event(event)
+    except Exception:
+      logger.exception("CalDAV event sync failed")
+
+  async def _delete_remote_event(self, event_id: str) -> None:
+    if self.caldav_sync_service is None:
+      return
+
+    try:
+      await self.caldav_sync_service.delete_event(event_id)
+    except Exception:
+      logger.exception("CalDAV event deletion sync failed")

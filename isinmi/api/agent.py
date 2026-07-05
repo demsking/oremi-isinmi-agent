@@ -40,7 +40,7 @@ AGENT_CHAT_OPENAPI_EXAMPLES: dict[str, Example] = {
     "value": {
       "message": "Remind me tomorrow at 7 AM to pack Amara's lunch and tag it school",
       "context": {"timezone": "Europe/Paris"},
-      "tags": ["device:iphone", "user:family_admin", "session:8f8f0d1d"],
+      "tags": ["device_id:iphone-14", "uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de"],
     },
   },
   "create_event": {
@@ -49,7 +49,7 @@ AGENT_CHAT_OPENAPI_EXAMPLES: dict[str, Example] = {
     "value": {
       "message": "Schedule dentist appointment next Wednesday at 2 PM for one hour, tag it health",
       "context": {"timezone": "Europe/Paris"},
-      "tags": ["device:android", "uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de"],
+      "tags": ["device_id:android-tablet", "user_id:alex"],
     },
   },
   "query_family": {
@@ -58,7 +58,7 @@ AGENT_CHAT_OPENAPI_EXAMPLES: dict[str, Example] = {
     "value": {
       "message": "What family events do I have this weekend?",
       "context": {"timezone": "Europe/Paris"},
-      "tags": ["user:family_admin", "household:main"],
+      "tags": ["uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de", "device_id:web-app"],
     },
   },
   "query_bills": {
@@ -67,7 +67,7 @@ AGENT_CHAT_OPENAPI_EXAMPLES: dict[str, Example] = {
     "value": {
       "message": "Show me my bill reminders for this month",
       "context": {"timezone": "Europe/Paris"},
-      "tags": ["device:web", "source:mobile-app"],
+      "tags": ["device_id:web-app", "user_id:alex"],
     },
   },
 }

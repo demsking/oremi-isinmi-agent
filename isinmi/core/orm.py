@@ -134,3 +134,47 @@ class AgentConversationORM(Base):
   tags: Mapped[list[str]] = mapped_column(JsonType, nullable=False)
   context: Mapped[dict[str, object]] = mapped_column(JsonType, nullable=False)
   created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
+class CalDAVAccountORM(Base):
+  __tablename__ = "caldav_accounts"
+  __table_args__ = (
+    Index("idx_caldav_accounts_is_active", "is_active"),
+    Index("idx_caldav_accounts_tags", "tags"),
+  )
+
+  id: Mapped[str] = mapped_column(String, primary_key=True)
+  name: Mapped[str] = mapped_column(String(200), nullable=False)
+  base_url: Mapped[str] = mapped_column(String(500), nullable=False)
+  calendar_url: Mapped[str] = mapped_column(String(500), nullable=False)
+  username: Mapped[str] = mapped_column(String(200), nullable=False)
+  password: Mapped[str] = mapped_column(String(500), nullable=False)
+  tags: Mapped[list[str]] = mapped_column(JsonType, nullable=False)
+  is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+  sync_token: Mapped[str | None] = mapped_column(String(500), nullable=True)
+  last_synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+  last_sync_error: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+  created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+  updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
+class CalDAVEventLinkORM(Base):
+  __tablename__ = "caldav_event_links"
+  __table_args__ = (
+    Index("idx_caldav_event_links_account_id", "account_id"),
+    Index("idx_caldav_event_links_event_id", "event_id"),
+    Index("idx_caldav_event_links_remote_uid", "remote_uid"),
+    Index("idx_caldav_event_links_status", "sync_status"),
+  )
+
+  id: Mapped[str] = mapped_column(String, primary_key=True)
+  account_id: Mapped[str] = mapped_column(String, nullable=False)
+  event_id: Mapped[str] = mapped_column(String, nullable=False)
+  remote_uid: Mapped[str] = mapped_column(String(500), nullable=False)
+  remote_href: Mapped[str] = mapped_column(String(1000), nullable=False)
+  remote_etag: Mapped[str | None] = mapped_column(String(200), nullable=True)
+  sync_status: Mapped[str] = mapped_column(String(32), nullable=False)
+  last_synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+  last_sync_error: Mapped[str | None] = mapped_column(String(2000), nullable=True)
+  created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+  updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

@@ -23,6 +23,7 @@ from fastapi.responses import JSONResponse
 from fastapi_mcp import FastApiMCP
 
 from ..api import agent
+from ..api import caldav
 from ..api import alerts
 from ..api import docs
 from ..api import events
@@ -30,9 +31,11 @@ from ..api import health
 from ..api import notifications
 from ..api import reminders
 from ..repositories.alert_repository import AlertRepository
+from ..repositories.caldav_repository import CalDAVRepository
 from ..repositories.event_repository import EventRepository
 from ..repositories.notification_repository import NotificationRepository
 from ..repositories.reminder_repository import ReminderRepository
+from ..integrations.caldav.service import CalDAVSyncService
 from ..services.agent_service import AgentService
 from ..services.alert_service import AlertService
 from ..services.event_service import EventService
@@ -91,6 +94,8 @@ def create_app(settings: Settings | None = None) -> tuple[FastAPI, Settings]:
     sse = SSEManager()
     notification_service = NotificationService(NotificationRepository(db), sse)
     reminder_service = ReminderService(ReminderRepository(db), notification_service)
+    event_repository = EventRepository(db)
+    caldav_repository = CalDAVRepository(db)
 
     app.state.settings = resolved_settings
     app.state.db = db
@@ -98,8 +103,21 @@ def create_app(settings: Settings | None = None) -> tuple[FastAPI, Settings]:
     app.state.notification_service = notification_service
     app.state.alert_service = AlertService(AlertRepository(db), notification_service)
     app.state.reminder_service = reminder_service
-    app.state.event_service = EventService(EventRepository(db), notification_service)
-    app.state.agent_service = AgentService(resolved_settings, db, reminder_service, app.state.event_service)
+    app.state.event_service = EventService(event_repository, notification_service)
+    app.state.caldav_service = CalDAVSyncService(
+      caldav_repository,
+      event_repository,
+      resolved_settings.llm_request_timeout,
+    )
+
+    app.state.event_service.set_caldav_sync_service(app.state.caldav_service)
+
+    app.state.agent_service = AgentService(
+      resolved_settings,
+      db,
+      reminder_service,
+      app.state.event_service,
+    )
 
     if resolved_settings.uses_ollama():
       await _pull_ollama_model(resolved_settings)
@@ -128,6 +146,7 @@ def create_app(settings: Settings | None = None) -> tuple[FastAPI, Settings]:
       alerts.API_TAG_METADATA,
       reminders.API_TAG_METADATA,
       events.API_TAG_METADATA,
+      caldav.API_TAG_METADATA,
       notifications.API_TAG_METADATA,
       health.API_TAG_METADATA,
     ],
@@ -148,6 +167,7 @@ def create_app(settings: Settings | None = None) -> tuple[FastAPI, Settings]:
   app.include_router(alerts.router, prefix=api_prefix)
   app.include_router(reminders.router, prefix=api_prefix)
   app.include_router(events.router, prefix=api_prefix)
+  app.include_router(caldav.router, prefix=api_prefix)
   app.include_router(notifications.router, prefix=api_prefix)
   app.include_router(agent.router, prefix=api_prefix)
   app.include_router(health.router, prefix=prefix)
