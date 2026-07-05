@@ -123,7 +123,7 @@ services:
     env_file:
       - .env
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7337/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:7337/health/"]
       interval: 30s
       timeout: 10s
       retries: 3
