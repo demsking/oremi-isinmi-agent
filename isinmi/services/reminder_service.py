@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from datetime import timedelta
 
 from fastapi import HTTPException
 
@@ -46,13 +47,17 @@ class ReminderService:
     start: datetime | None,
     end: datetime | None,
     tags: list[str],
+    upcoming: bool,
     limit: int,
     offset: int,
   ) -> list[Reminder]:
-    return await self.repository.list(status=status, start=start, end=end, tags=tags, limit=limit, offset=offset)
+    if upcoming:
+      now = datetime.now()
+      status = "pending"
+      start = now
+      end = now + timedelta(hours=24)
 
-  async def upcoming(self) -> list[Reminder]:
-    return await self.repository.upcoming()
+    return await self.repository.list(status=status, start=start, end=end, tags=tags, limit=limit, offset=offset)
 
   async def update(self, reminder_id: str, payload: ReminderUpdate) -> Reminder:
     reminder = await self.repository.update(reminder_id, payload.model_dump(exclude_unset=True))

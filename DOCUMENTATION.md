@@ -16,7 +16,7 @@ peace of mind by keeping your commitments organized and your time well-managed.
 This agent embodies that philosophy by offering:
 
 - **Natural Language Interaction**: Simply tell the agent what you need, and it understands
-- **Smart Organization**: Use tags to categorize and find your reminders and events instantly
+- **Smart Organization**: Use tags to group and filter records by device, UUID, source, user, or workflow
 - **Privacy First**: Everything stays on your device with encrypted local storage
 - **Real-time Notifications**: Stay informed with Server-Sent Events for alerts and reminders
 - **AI-Powered Understanding**: Uses a configurable LLM backend with Ollama as the default
@@ -26,11 +26,29 @@ This agent embodies that philosophy by offering:
 - **Intelligent Reminder Management**: Create, update, and track reminders with natural language
 - **Smart Event Scheduling**: Plan events with automatic reminder generation
 - **Alert Handling**: Manage critical notifications with acknowledgment workflows
-- **Tag-Based Organization**: Filter and find items instantly using custom tags
+- **Tag-Based Organization**: Filter and find items instantly using client grouping tags stored on alerts, reminders, events, and notifications
 - **Real-time Notifications**: SSE streaming for immediate updates
 - **AI Conversation**: Chat with the agent to manage your schedule
 - **Encrypted Storage**: SQLAlchemy ORM with SQLCipher-backed SQLite and support for other SQL databases
 - **Lightweight Deployment**: Alpine-based [Docker image](https://hub.docker.com/r/demsking/oremi-isinmi-agent) for minimal resource usage
+
+## Tags
+
+Tags are free-form client grouping keys used to organize and filter records
+across the application. They are stored as normalized JSON arrays and can be
+attached to alerts, reminders, events, notifications, and chat requests.
+
+Use tags when you want to group records by values such as:
+
+- `device:iphone`
+- `device:web`
+- `uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de`
+
+Tag-filtered endpoints match every requested tag, so
+`?tags=device:iphone,uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de` returns only
+records that carry both tags. The `/agent/chat` endpoint also accepts optional
+tags so a client can group the conversation itself and any reminder created
+from it.
 
 ## Use Cases
 

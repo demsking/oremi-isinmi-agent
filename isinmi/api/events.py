@@ -60,10 +60,10 @@ tags overlap the requested tag set. If no tags are provided, the client receives
 all live events. The stream emits named events such as `new_alert`,
 `new_reminder`, `new_event`, and `ping`. Event payloads are JSON strings.
 
-JavaScript example:
+**JavaScript example**
 
 ```javascript
-const stream = new EventSource("http://localhost:7337/events/stream?tags=family,school");
+const stream = new EventSource("http://localhost:7337/api/events/stream?tags=family,school");
 
 stream.addEventListener("new_reminder", (event) => {
   const reminder = JSON.parse(event.data);
@@ -84,13 +84,13 @@ stream.onerror = () => {
 };
 ```
 
-Python example:
+**Python example**
 
 ```python
 import json
 import httpx
 
-url = "http://localhost:7337/events/stream?tags=family,school"
+url = "http://localhost:7337/api/events/stream?tags=family,school"
 
 with httpx.stream("GET", url, timeout=None) as response:
   response.raise_for_status()
@@ -265,7 +265,7 @@ async def create_event(
   description=(
     "Return calendar events matching optional filters. Use this endpoint to show a user's upcoming schedule, "
     "review completed or cancelled events, filter by date windows, or narrow results to tags such as "
-    "`family`, `health`, `work`, or `school`."
+    "`family`, `health`, `work`, or `school` without needing a separate tag-only endpoint."
   ),
 )
 async def list_events(
@@ -282,25 +282,6 @@ async def list_events(
 ) -> list[Event]:
   ensure_date_range(start, end)
   return await service(request).list(status, start, end, parse_tags_query(tags), limit, offset)
-
-
-@router.get(
-  "/by-tags/",
-  operation_id="get_events_by_tags",
-  response_model=list[Event],
-  summary="Get events by tags",
-  description=(
-    "Return only events that contain every requested tag. This is useful for assistant queries like "
-    "`show my family events`, `what health appointments are coming up`, or `list work meetings this week`."
-  ),
-)
-async def events_by_tags(
-  request: Request,
-  tags: str = Query(..., description="Comma-separated tags."),
-  limit: int = Query(default=100, ge=1, le=500, description="Maximum records to return."),
-  offset: int = Query(default=0, ge=0, description="Number of records to skip."),
-) -> list[Event]:
-  return await service(request).list(None, None, None, parse_tags_query(tags), limit, offset)
 
 
 @router.get(

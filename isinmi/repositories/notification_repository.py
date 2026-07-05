@@ -109,3 +109,23 @@ class NotificationRepository:
       return len(records)
 
     return await self.db.run(_operation)
+
+  async def mark_all_read_by_tags(self, tags: list[str]) -> int:
+    def _operation(session):
+      stmt = select(NotificationORM).where(NotificationORM.read_status.is_(False))
+      tag_filter = build_tags_filter(NotificationORM.tags, tags, session.bind.dialect.name)
+
+      if tag_filter is not None:
+        stmt = stmt.where(tag_filter)
+
+      records = session.scalars(stmt).all()
+
+      for record in records:
+        record.read_status = True
+        record.read_at = datetime.now()
+
+      session.flush()
+
+      return len(records)
+
+    return await self.db.run(_operation)

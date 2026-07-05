@@ -25,8 +25,9 @@ API_TAG_METADATA = {
   "name": "Agent Endpoints",
   "description": (
     "Natural-language personal-assistant interactions. The agent accepts Alexa-style requests, "
-    "uses LLM model through, and returns structured actions that can create or query reminders "
-    "and events from conversational text."
+    "uses the configured LLM backend, and returns structured actions that can create or query reminders "
+    "and events from conversational text. Optional tags can be attached by the client to group the chat "
+    "request and any resulting records by UUID, device, source, user, or workflow."
   ),
 }
 
@@ -38,7 +39,8 @@ AGENT_CHAT_OPENAPI_EXAMPLES: dict[str, Example] = {
     "description": "A user talks to Oremi the way they would talk to a home assistant.",
     "value": {
       "message": "Remind me tomorrow at 7 AM to pack Amara's lunch and tag it school",
-      "context": {"user_id": "family_admin", "timezone": "Europe/Paris"},
+      "context": {"timezone": "Europe/Paris"},
+      "tags": ["device:iphone", "user:family_admin", "session:8f8f0d1d"],
     },
   },
   "create_event": {
@@ -46,7 +48,8 @@ AGENT_CHAT_OPENAPI_EXAMPLES: dict[str, Example] = {
     "description": "Natural language scheduling for a real personal calendar appointment.",
     "value": {
       "message": "Schedule dentist appointment next Wednesday at 2 PM for one hour, tag it health",
-      "context": {"user_id": "user123", "timezone": "Europe/Paris"},
+      "context": {"timezone": "Europe/Paris"},
+      "tags": ["device:android", "uuid:7d5b4a5d-89a5-4f23-a7c5-4c1d65c9f7de"],
     },
   },
   "query_family": {
@@ -55,6 +58,7 @@ AGENT_CHAT_OPENAPI_EXAMPLES: dict[str, Example] = {
     "value": {
       "message": "What family events do I have this weekend?",
       "context": {"timezone": "Europe/Paris"},
+      "tags": ["user:family_admin", "household:main"],
     },
   },
   "query_bills": {
@@ -63,6 +67,7 @@ AGENT_CHAT_OPENAPI_EXAMPLES: dict[str, Example] = {
     "value": {
       "message": "Show me my bill reminders for this month",
       "context": {"timezone": "Europe/Paris"},
+      "tags": ["device:web", "source:mobile-app"],
     },
   },
 }
@@ -87,7 +92,11 @@ async def chat(
   request: Request,
   payload: AgentChatRequest = Body(
     ...,
-    description="Natural language message and optional user context for the agent.",
+    description=(
+      "Natural language message, optional user context, and optional client grouping tags for the agent. "
+      "Use tags to group chat requests and any created reminders or related records by device, UUID, user, "
+      "source, or workflow."
+    ),
     openapi_examples=AGENT_CHAT_OPENAPI_EXAMPLES,
   ),
 ) -> AgentAction:

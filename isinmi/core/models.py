@@ -62,13 +62,16 @@ def new_id() -> str:
 
 
 def clean_tags(tags: list[str]) -> list[str]:
-  """Normalize tags for storage and search."""
+  """Normalize grouping/filtering tags for storage and search."""
 
   normalized: list[str] = []
+
   for tag in tags:
     value = tag.strip().lower()
+
     if value and value not in normalized:
       normalized.append(value)
+
   return normalized
 
 
@@ -79,14 +82,20 @@ class Alert(StrictModel):
   severity: Literal["info", "warning", "critical"] = Field(..., description="Alert severity level.")
   timestamp: DateTime = Field(default_factory=DateTime.now, description="When the alert was created.")
   source: str | None = Field(None, max_length=100, description="Source of the alert.")
-  tags: list[str] = Field(default_factory=list, description="Tags for organizing and filtering alerts.")
+  tags: list[str] = Field(
+    default_factory=list,
+    description=(
+      "Client grouping and filtering tags for alerts, such as device identifiers, UUIDs, source labels, "
+      "or workflow names."
+    ),
+  )
   acknowledged: bool = Field(default=False, description="Whether the alert has been acknowledged.")
   acknowledged_at: DateTime | None = Field(None, description="When the alert was acknowledged.")
 
   @field_validator("tags")
   @classmethod
-  def normalize_tags(cls, v: list[str]) -> list[str]:
-    return clean_tags(v)
+  def normalize_tags(cls, value: list[str]) -> list[str]:
+    return clean_tags(value)
 
 
 class AlertCreate(StrictModel):
@@ -94,12 +103,18 @@ class AlertCreate(StrictModel):
   message: str = Field(..., min_length=1, description="Detailed alert message.")
   severity: Literal["info", "warning", "critical"] = Field(..., description="Alert severity level.")
   source: str | None = Field(None, max_length=100, description="Source of the alert.")
-  tags: list[str] = Field(default_factory=list, description="Tags for organizing and filtering alerts.")
+  tags: list[str] = Field(
+    default_factory=list,
+    description=(
+      "Client grouping and filtering tags for alerts, such as device identifiers, UUIDs, source labels, "
+      "or workflow names."
+    ),
+  )
 
   @field_validator("tags")
   @classmethod
-  def normalize_tags(cls, v: list[str]) -> list[str]:
-    return clean_tags(v)
+  def normalize_tags(cls, value: list[str]) -> list[str]:
+    return clean_tags(value)
 
 
 class Reminder(StrictModel):
@@ -108,15 +123,21 @@ class Reminder(StrictModel):
   description: str | None = Field(None, max_length=500, description="Detailed reminder description.")
   datetime: DateTime = Field(..., description="When the reminder should trigger.")
   recurring: Literal["none", "daily", "weekly", "monthly"] = Field(default="none", description="Recurring frequency.")
-  tags: list[str] = Field(default_factory=list, description="Tags for organizing and filtering reminders.")
+  tags: list[str] = Field(
+    default_factory=list,
+    description=(
+      "Client grouping and filtering tags for reminders, such as device identifiers, UUIDs, source labels, "
+      "or workflow names."
+    ),
+  )
   status: Literal["pending", "completed", "dismissed"] = Field(default="pending", description="Current status.")
   created_at: DateTime = Field(default_factory=DateTime.now, description="When the reminder was created.")
   notified_at: DateTime | None = Field(None, description="When the notification was sent.")
 
   @field_validator("tags")
   @classmethod
-  def normalize_tags(cls, v: list[str]) -> list[str]:
-    return clean_tags(v)
+  def normalize_tags(cls, value: list[str]) -> list[str]:
+    return clean_tags(value)
 
 
 class ReminderCreate(StrictModel):
@@ -124,12 +145,18 @@ class ReminderCreate(StrictModel):
   description: str | None = Field(None, max_length=500, description="Detailed reminder description.")
   datetime: DateTime = Field(..., description="When the reminder should trigger.")
   recurring: Literal["none", "daily", "weekly", "monthly"] = Field(default="none", description="Recurring frequency.")
-  tags: list[str] = Field(default_factory=list, description="Tags for organizing and filtering reminders.")
+  tags: list[str] = Field(
+    default_factory=list,
+    description=(
+      "Client grouping and filtering tags for reminders, such as device identifiers, UUIDs, source labels, "
+      "or workflow names."
+    ),
+  )
 
   @field_validator("tags")
   @classmethod
-  def normalize_tags(cls, v: list[str]) -> list[str]:
-    return clean_tags(v)
+  def normalize_tags(cls, value: list[str]) -> list[str]:
+    return clean_tags(value)
 
 
 class ReminderUpdate(StrictModel):
@@ -137,13 +164,19 @@ class ReminderUpdate(StrictModel):
   description: str | None = Field(None, max_length=500, description="Updated reminder description.")
   datetime: DateTime | None = Field(None, description="Updated reminder trigger time.")
   recurring: Literal["none", "daily", "weekly", "monthly"] | None = Field(None, description="Updated recurrence.")
-  tags: list[str] | None = Field(None, description="Updated tags for the reminder.")
+  tags: list[str] | None = Field(
+    None,
+    description=(
+      "Updated client grouping and filtering tags for the reminder, such as device identifiers, UUIDs, "
+      "source labels, or workflow names."
+    ),
+  )
   status: Literal["pending", "completed", "dismissed"] | None = Field(None, description="Updated status.")
 
   @field_validator("tags")
   @classmethod
-  def normalize_tags(cls, v: list[str] | None) -> list[str] | None:
-    return clean_tags(v) if v is not None else None
+  def normalize_tags(cls, value: list[str] | None) -> list[str] | None:
+    return clean_tags(value) if value is not None else None
 
 
 class Event(StrictModel):
@@ -154,7 +187,13 @@ class Event(StrictModel):
   end_datetime: DateTime = Field(..., description="Event end date and time.")
   location: str | None = Field(None, max_length=200, description="Event location.")
   attendees: list[str] = Field(default_factory=list, description="List of attendee names or emails.")
-  tags: list[str] = Field(default_factory=list, description="Tags for organizing and filtering events.")
+  tags: list[str] = Field(
+    default_factory=list,
+    description=(
+      "Client grouping and filtering tags for events, such as device identifiers, UUIDs, source labels, "
+      "or workflow names."
+    ),
+  )
   reminders: list[int] = Field(default_factory=lambda: [15, 30, 60], description="Reminder offsets in minutes.")
   status: Literal["scheduled", "ongoing", "completed", "cancelled"] = Field(
     default="scheduled",
@@ -164,8 +203,8 @@ class Event(StrictModel):
 
   @field_validator("tags")
   @classmethod
-  def normalize_tags(cls, v: list[str]) -> list[str]:
-    return clean_tags(v)
+  def normalize_tags(cls, value: list[str]) -> list[str]:
+    return clean_tags(value)
 
   @model_validator(mode="after")
   def validate_dates(self) -> "Event":
@@ -181,18 +220,25 @@ class EventCreate(StrictModel):
   end_datetime: DateTime = Field(..., description="Event end date and time.")
   location: str | None = Field(None, max_length=200, description="Event location.")
   attendees: list[str] = Field(default_factory=list, description="List of attendee names or emails.")
-  tags: list[str] = Field(default_factory=list, description="Tags for organizing and filtering events.")
+  tags: list[str] = Field(
+    default_factory=list,
+    description=(
+      "Client grouping and filtering tags for events, such as device identifiers, UUIDs, source labels, "
+      "or workflow names."
+    ),
+  )
   reminders: list[int] = Field(default_factory=lambda: [15, 30, 60], description="Reminder offsets in minutes.")
 
   @field_validator("tags")
   @classmethod
-  def normalize_tags(cls, v: list[str]) -> list[str]:
-    return clean_tags(v)
+  def normalize_tags(cls, value: list[str]) -> list[str]:
+    return clean_tags(value)
 
   @model_validator(mode="after")
   def validate_dates(self) -> "EventCreate":
     if self.end_datetime <= self.start_datetime:
       raise ValueError("end_datetime must be after start_datetime")
+
     return self
 
 
@@ -203,7 +249,13 @@ class EventUpdate(StrictModel):
   end_datetime: DateTime | None = Field(None, description="Updated event end date and time.")
   location: str | None = Field(None, max_length=200, description="Updated event location.")
   attendees: list[str] | None = Field(None, description="Updated attendee names or emails.")
-  tags: list[str] | None = Field(None, description="Updated tags for organizing and filtering events.")
+  tags: list[str] | None = Field(
+    None,
+    description=(
+      "Updated client grouping and filtering tags for events, such as device identifiers, UUIDs, "
+      "source labels, or workflow names."
+    ),
+  )
   reminders: list[int] | None = Field(None, description="Updated reminder offsets in minutes.")
   status: Literal["scheduled", "ongoing", "completed", "cancelled"] | None = Field(
     None,
@@ -212,8 +264,8 @@ class EventUpdate(StrictModel):
 
   @field_validator("tags")
   @classmethod
-  def normalize_tags(cls, v: list[str] | None) -> list[str] | None:
-    return clean_tags(v) if v is not None else None
+  def normalize_tags(cls, value: list[str] | None) -> list[str] | None:
+    return clean_tags(value) if value is not None else None
 
 
 class Notification(StrictModel):
@@ -221,15 +273,21 @@ class Notification(StrictModel):
   type: Literal["alert", "reminder", "event"] = Field(..., description="Type of notification.")
   message: str = Field(..., min_length=1, description="Notification message.")
   entity_id: str = Field(..., description="ID of the related entity.")
-  tags: list[str] = Field(default_factory=list, description="Tags associated with the notification.")
+  tags: list[str] = Field(
+    default_factory=list,
+    description=(
+      "Client grouping and filtering tags for notifications, such as device identifiers, UUIDs, source labels, "
+      "or workflow names."
+    ),
+  )
   timestamp: DateTime = Field(default_factory=DateTime.now, description="When the notification was created.")
   read_status: bool = Field(default=False, description="Whether the notification has been read.")
   read_at: DateTime | None = Field(None, description="When the notification was read.")
 
   @field_validator("tags")
   @classmethod
-  def normalize_tags(cls, v: list[str]) -> list[str]:
-    return clean_tags(v)
+  def normalize_tags(cls, value: list[str]) -> list[str]:
+    return clean_tags(value)
 
 
 class AgentAction(StrictModel):
@@ -242,24 +300,38 @@ class AgentAction(StrictModel):
     "search_by_tags",
     "none",
   ] = Field(..., description="Type of action to perform.")
+
   entity_type: Literal["reminder", "event", "alert", "none"] = Field(..., description="Type of entity to act upon.")
   data: dict[str, Any] = Field(default_factory=dict, description="Structured data for the action.")
-  tags: list[str] = Field(default_factory=list, description="Tags to filter or apply to the entity.")
+  tags: list[str] = Field(
+    default_factory=list,
+    description=(
+      "Client grouping and filtering tags to apply to the action or resulting entity, such as device "
+      "identifiers, UUIDs, source labels, or workflow names."
+    ),
+  )
   response_message: str = Field(..., description="Human-friendly response to the user.")
   requires_confirmation: bool = Field(default=False, description="Whether the action requires user confirmation.")
   confidence_score: float = Field(default=0.8, ge=0.0, le=1.0, description="Confidence score of intent detection.")
 
   @field_validator("tags")
   @classmethod
-  def normalize_tags(cls, v: list[str]) -> list[str]:
-    return clean_tags(v)
+  def normalize_tags(cls, value: list[str]) -> list[str]:
+    return clean_tags(value)
 
 
 class AgentChatRequest(StrictModel):
   message: str = Field(..., min_length=1, max_length=2000, description="Natural language message for the agent.")
   context: dict[str, Any] = Field(default_factory=dict, description="Optional user context such as timezone.")
+  tags: list[str] = Field(
+    default_factory=list,
+    description=(
+      "Optional client grouping and filtering tags for the chat request, such as device identifiers, UUIDs, "
+      "source labels, or workflow names."
+    ),
+  )
 
-
-class TagsRequest(StrictModel):
-  text: str = Field(..., min_length=1, max_length=2000, description="Natural language text to inspect for tags.")
-  existing_tags: list[str] = Field(default_factory=list, description="Existing tags available for matching.")
+  @field_validator("tags")
+  @classmethod
+  def normalize_tags(cls, value: list[str]) -> list[str]:
+    return clean_tags(value)

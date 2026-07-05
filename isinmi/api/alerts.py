@@ -122,7 +122,8 @@ async def create_alert(
   summary="List alerts",
   description=(
     "List stored alerts with optional filters for severity, acknowledgement status, and tags. This endpoint "
-    "supports notification centers, alert history screens, and assistant queries like `show urgent home alerts`."
+    "supports notification centers, alert history screens, and assistant queries like `show urgent home alerts` "
+    "without requiring a separate tag-only route."
   ),
 )
 async def list_alerts(
@@ -134,25 +135,6 @@ async def list_alerts(
   offset: int = Query(default=0, ge=0, description="Number of records to skip."),
 ) -> list[Alert]:
   return await service(request).list(severity, acknowledged, parse_tags_query(tags), limit, offset)
-
-
-@router.get(
-  "/by-tags/",
-  operation_id="get_alerts_by_tags",
-  response_model=list[Alert],
-  summary="Get alerts by tags",
-  description=(
-    "Return alerts that contain every requested tag. Use this endpoint when a client or assistant needs to "
-    "focus on one area of life, such as `home`, `security`, `maintenance`, or `cooking`."
-  ),
-)
-async def alerts_by_tags(
-  request: Request,
-  tags: str = Query(..., description="Comma-separated tags, for example work,urgent."),
-  limit: int = Query(default=100, ge=1, le=500, description="Maximum records to return."),
-  offset: int = Query(default=0, ge=0, description="Number of records to skip."),
-) -> list[Alert]:
-  return await service(request).list(None, None, parse_tags_query(tags), limit, offset)
 
 
 @router.put(

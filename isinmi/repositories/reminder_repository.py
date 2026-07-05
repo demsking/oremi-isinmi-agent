@@ -15,7 +15,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from datetime import timedelta
 
 from sqlalchemy import select
 
@@ -88,10 +87,6 @@ class ReminderRepository:
 
     rows = await self.db.run(_operation)
     return [Reminder.model_validate(row) for row in rows]
-
-  async def upcoming(self) -> list[Reminder]:
-    now = datetime.now()
-    return await self.list(status="pending", start=now, end=now + timedelta(hours=24), limit=200)
 
   async def update(self, reminder_id: str, changes: dict[str, object]) -> Reminder | None:
     def _operation(session):

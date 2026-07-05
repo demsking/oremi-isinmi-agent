@@ -13,12 +13,11 @@
 # limitations under the License.
 # ==============================================================================
 import logging
-import re
 from datetime import datetime
-from datetime import timedelta
 
 from pydantic_ai import Agent
 from pydantic_ai.agent import AgentModelSettings
+from fastapi import HTTPException
 
 from ..core.database import Database
 from ..core.models import AgentAction
@@ -26,7 +25,6 @@ from ..core.models import AgentChatRequest
 from ..core.models import clean_tags
 from ..core.models import new_id
 from ..core.models import ReminderCreate
-from ..core.models import TagsRequest
 from ..core.orm import AgentConversationORM
 from ..core.settings import Settings
 from ..services.reminder_service import ReminderService
@@ -35,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 class AgentService:
-  """Pydantic-AI based agent with a deterministic fallback."""
+  """Pydantic-AI based agent."""
 
   def __init__(self, settings: Settings, db: Database, reminders: ReminderService) -> None:
     self.settings = settings
@@ -79,6 +77,9 @@ class AgentService:
 
   async def chat(self, request: AgentChatRequest) -> AgentAction:
     action = await self._run_agent(request)
+    effective_tags = self._merge_tags(request.tags, action.tags, action.data.get("tags", []))
+
+    action.tags = effective_tags
 
     if action.action_type == "create_reminder" and action.data.get("title") and action.data.get("datetime"):
       try:
@@ -87,11 +88,12 @@ class AgentService:
           description=action.data.get("description"),
           datetime=datetime.fromisoformat(str(action.data["datetime"])),
           recurring=action.data.get("recurring", "none"),
-          tags=clean_tags(action.tags or action.data.get("tags", [])),
+          tags=effective_tags,
         )
 
         reminder = await self.reminders.create(payload)
         action.data["id"] = reminder.id
+        action.data["tags"] = effective_tags
       except Exception as exc:
         logger.exception("Failed to materialize agent reminder")
 
@@ -107,90 +109,24 @@ class AgentService:
     return action
 
   async def _run_agent(self, request: AgentChatRequest) -> AgentAction:
-    if self._agent is not None:
-      try:
-        result = await self._agent.run(request.message, deps=request.context)
+    if self._agent is None:
+      raise HTTPException(status_code=412, detail="LLM agent is not configured")
 
-        return result.output
-      except Exception as exc:
-        logger.warning("Agent call failed, using fallback parser: %s", exc)
+    try:
+      result = await self._agent.run(request.message, deps=request.context)
+      return result.output
+    except Exception as exc:
+      logger.exception("Agent call failed")
+      raise HTTPException(status_code=502, detail="LLM agent call failed") from exc
 
-    return self._fallback_parse(request)
+  def _merge_tags(self, *tag_groups: object) -> list[str]:
+    merged: list[str] = []
 
-  def _fallback_parse(self, request: AgentChatRequest) -> AgentAction:
-    text = request.message.strip()
-    lower = text.lower()
-    tags = self.extract_tags(TagsRequest(text=text))
+    for group in tag_groups:
+      if isinstance(group, (list, tuple, set)):
+        merged.extend(list(group))
 
-    if "remind me" in lower:
-      title = re.sub(r"(?i)^.*?remind me to\s+", "", text)
-      title = re.split(r"(?i)\s+(tomorrow|today|at|tag it as|label it as)\b", title)[0].strip(" ,.")
-      when = self._rough_datetime(lower)
-
-      return AgentAction(
-        action_type="create_reminder",
-        entity_type="reminder",
-        data={"title": title or "Reminder", "datetime": when.isoformat(), "tags": tags},
-        tags=tags,
-        response_message=f"I created a reminder for {when:%Y-%m-%d %H:%M}.",
-        confidence_score=0.65,
-      )
-
-    if any(word in lower for word in ["show", "list", "what"]):
-      entity = "event" if "event" in lower else "reminder" if "reminder" in lower else "none"
-
-      return AgentAction(
-        action_type="search_by_tags" if tags else "list",
-        entity_type=entity,
-        tags=tags,
-        response_message="I can search your saved items with those filters.",
-        confidence_score=0.55,
-      )
-
-    return AgentAction(
-      action_type="none",
-      entity_type="none",
-      tags=tags,
-      response_message="I can help create reminders, schedule events, and search by tags.",
-      confidence_score=0.4,
-    )
-
-  def _rough_datetime(self, lower: str) -> datetime:
-    base = datetime.now().replace(second=0, microsecond=0)
-
-    if "tomorrow" in lower:
-      base += timedelta(days=1)
-
-    hour_match = re.search(r"\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b", lower)
-
-    if hour_match:
-      hour = int(hour_match.group(1))
-      minute = int(hour_match.group(2) or 0)
-      marker = hour_match.group(3)
-
-      if marker == "pm" and hour < 12:
-        hour += 12
-
-      if marker == "am" and hour == 12:
-        hour = 0
-
-      base = base.replace(hour=hour, minute=minute)
-
-    return base
-
-  def extract_tags(self, request: TagsRequest) -> list[str]:
-    text = request.text.lower()
-    tags: list[str] = []
-    explicit = re.search(r"(?:tag|label)(?: it)? as ([a-z0-9, and_-]+)", text)
-
-    if explicit:
-      tags.extend(re.split(r",|\band\b", explicit.group(1)))
-
-    for candidate in request.existing_tags + ["work", "urgent", "personal", "errands", "groceries", "meeting"]:
-      if candidate.lower() in text:
-        tags.append(candidate)
-
-    return clean_tags(tags)
+    return clean_tags(merged)
 
   async def _save_conversation(self, request: AgentChatRequest, action: AgentAction) -> None:
     def _operation(session):
@@ -201,7 +137,7 @@ class AgentService:
           response=action.response_message,
           action_type=action.action_type,
           entity_type=action.entity_type,
-          tags=action.tags,
+          tags=self._merge_tags(request.tags, action.tags),
           context=request.context,
           created_at=datetime.now(),
         )

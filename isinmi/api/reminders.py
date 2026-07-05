@@ -142,7 +142,8 @@ def service(request: Request) -> ReminderService:
     recurrence, and tags. Use this for everyday assistant scenarios such as
     school pickup, taking medication, putting bins outside, paying bills, or
     remembering an errand. The reminder is stored in the encrypted database and
-    appears in list, tag search, and upcoming-reminder endpoints.
+    appears in the list endpoint, including the `upcoming=true` view and tag
+    filtered queries.
   """,
   responses={
     201: {
@@ -172,8 +173,8 @@ async def create_reminder(
   summary="List reminders",
   description=(
     "List reminders with optional filters for status, date range, tags, and pagination. This endpoint powers "
-    "reminder inboxes, calendar sidebars, and assistant queries like `what reminders do I have today` or "
-    "`show my health reminders`."
+    "reminder inboxes, calendar sidebars, upcoming reminder views, and assistant queries like `what reminders "
+    "do I have today`, `show my health reminders`, or `show my upcoming reminders`."
   ),
 )
 async def list_reminders(
@@ -185,51 +186,23 @@ async def list_reminders(
   start: datetime | None = Query(default=None, description="Start datetime filter."),
   end: datetime | None = Query(default=None, description="End datetime filter."),
   tags: str | None = Query(default=None, description="Comma-separated tags."),
+  upcoming: bool = Query(
+    default=False,
+    description="If true, return pending reminders due in the next 24 hours.",
+  ),
   limit: int = Query(default=100, ge=1, le=500, description="Maximum records to return."),
   offset: int = Query(default=0, ge=0, description="Number of records to skip."),
 ) -> list[Reminder]:
   """
   This endpoint allows you to retrieve a list of reminders based on various filters.
 
-  You can filter reminders by status, date range, and tags. The results can be
-  paginated using the limit and offset parameters. If no filters are provided,
-  all reminders will be returned.
+  You can filter reminders by status, date range, tags, and the upcoming flag.
+  When `upcoming=true`, the endpoint returns pending reminders due in the next
+  24 hours. The results can be paginated using the limit and offset parameters.
+  If no filters are provided, all reminders will be returned.
   """
   ensure_date_range(start, end)
-  return await service(request).list(status, start, end, parse_tags_query(tags), limit, offset)
-
-
-@router.get(
-  "/by-tags/",
-  operation_id="get_reminders_by_tags",
-  response_model=list[Reminder],
-  summary="Get reminders by tags",
-  description=(
-    "Return reminders that contain every requested tag. Use this for focused views such as `school`, `health`, "
-    "`finance`, `chores`, or `errands` without mixing unrelated commitments."
-  ),
-)
-async def reminders_by_tags(
-  request: Request,
-  tags: str = Query(..., description="Comma-separated tags."),
-  limit: int = Query(default=100, ge=1, le=500, description="Maximum records to return."),
-  offset: int = Query(default=0, ge=0, description="Number of records to skip."),
-) -> list[Reminder]:
-  return await service(request).list(None, None, None, parse_tags_query(tags), limit, offset)
-
-
-@router.get(
-  "/upcoming/",
-  operation_id="get_upcoming_reminders",
-  response_model=list[Reminder],
-  summary="Upcoming reminders",
-  description=(
-    "Return pending reminders due in the next 24 hours. Clients can use this endpoint to build a personal "
-    "assistant dashboard, morning briefing, or proactive notification queue."
-  ),
-)
-async def upcoming_reminders(request: Request) -> list[Reminder]:
-  return await service(request).upcoming()
+  return await service(request).list(status, start, end, parse_tags_query(tags), upcoming, limit, offset)
 
 
 @router.put(

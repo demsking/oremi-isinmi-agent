@@ -19,6 +19,7 @@ from fastapi import HTTPException
 from ..core.models import Notification
 from ..repositories.notification_repository import NotificationRepository
 from ..sse.manager import SSEManager
+from ..core.models import clean_tags
 
 
 class NotificationService:
@@ -57,7 +58,10 @@ class NotificationService:
 
     return notification
 
-  async def mark_all_read(self) -> dict[str, str]:
-    await self.repository.mark_all_read()
+  async def mark_all_read(self, tags: list[str] | None = None) -> dict[str, int | str]:
+    if tags:
+      count = await self.repository.mark_all_read_by_tags(clean_tags(tags))
+    else:
+      count = await self.repository.mark_all_read()
 
-    return {"status": "ok"}
+    return {"status": "ok", "count": count}

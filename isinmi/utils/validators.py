@@ -25,6 +25,7 @@ def parse_tags_query(tags: str | None = Query(default=None, description="Comma-s
 
   if not tags:
     return []
+
   return clean_tags([part for part in tags.split(",")])
 
 

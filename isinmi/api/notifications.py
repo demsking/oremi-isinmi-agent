@@ -45,7 +45,8 @@ def service(request: Request) -> NotificationService:
   summary="List notifications",
   description=(
     "List notification messages with optional filters for notification type, tags, read status, and "
-    "pagination. Use this endpoint for notification centers, activity feeds, and assistant summaries."
+    "pagination. Use this endpoint for notification centers, activity feeds, and assistant summaries "
+    "without needing a separate tag-only route."
   ),
 )
 async def list_notifications(
@@ -61,25 +62,6 @@ async def list_notifications(
   offset: int = Query(default=0, ge=0, description="Number of records to skip."),
 ) -> list[Notification]:
   return await service(request).list(type_, parse_tags_query(tags), read_status, limit, offset)
-
-
-@router.get(
-  "/by-tags/",
-  operation_id="get_notifications_by_tags",
-  response_model=list[Notification],
-  summary="Get notifications by tags",
-  description=(
-    "Return notifications that contain every requested tag. This lets clients show focused notification "
-    "streams such as `family`, `home`, `health`, `school`, or `urgent`."
-  ),
-)
-async def notifications_by_tags(
-  request: Request,
-  tags: str = Query(..., description="Comma-separated tags."),
-  limit: int = Query(default=100, ge=1, le=500, description="Maximum records to return."),
-  offset: int = Query(default=0, ge=0, description="Number of records to skip."),
-) -> list[Notification]:
-  return await service(request).list(None, parse_tags_query(tags), None, limit, offset)
 
 
 @router.get(
@@ -115,8 +97,12 @@ async def mark_read(notification_id: str, request: Request) -> Notification:
   summary="Mark all notifications read",
   description=(
     "Mark every unread notification as read in one operation. Use this when the user clears their "
-    "notification center or says something like `mark everything as read`."
+    "notification center or says something like `mark everything as read`. Optional tags can limit the "
+    "operation to a specific device, UUID, user, or workflow."
   ),
 )
-async def mark_all_read(request: Request) -> dict[str, str]:
-  return await service(request).mark_all_read()
+async def mark_all_read(
+  request: Request,
+  tags: str | None = Query(default=None, description="Comma-separated tags to scope the read operation."),
+) -> dict[str, int | str]:
+  return await service(request).mark_all_read(parse_tags_query(tags))
