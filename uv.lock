@@ -797,7 +797,7 @@ wheels = [
 
 [[package]]
 name = "oremi-isinmi"
-version = "1.0.0b0"
+version = "1.0.0b1"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },

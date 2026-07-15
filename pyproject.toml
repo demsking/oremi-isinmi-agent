@@ -1,6 +1,6 @@
 [project]
 name = "oremi-isinmi"
-version = "1.0.0b0"
+version = "1.0.0b1"
 description = "Encrypted reminders, scheduling, tags, SSE and MCP."
 authors = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
 maintainers = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
