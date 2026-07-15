@@ -1,7 +1,7 @@
 [project]
 name = "oremi-isinmi"
-version = "1.0.0-beta15"
-description = "Encrypted reminders, scheduling, tags, SSE, and natural language agent API."
+version = "1.0.0b0"
+description = "Encrypted reminders, scheduling, tags, SSE and MCP."
 authors = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
 maintainers = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
 license = { text = "Apache-2.0" }
@@ -9,15 +9,13 @@ readme = "README.md"
 requires-python = ">=3.12"
 
 keywords = [
-  "agent",
+  "mcp",
   "ai",
   "api",
   "calendar",
   "encryption",
   "events",
   "fastapi",
-  "llm",
-  "natural-language",
   "notifications",
   "oremi",
   "reminders",
@@ -45,12 +43,11 @@ dependencies = [
   "httpx>=0.28.0",
   "ollama>=0.5.0",
   "pydantic>=2.11.0",
-  "pydantic-ai>=0.4.0",
   "pydantic-settings>=2.10.0",
   "python-dotenv>=1.1.0",
   "sqlcipher3>=0.5.4",
   "sqlalchemy>=2.0.51",
-  "sse-starlette>=2.3.0",
+  "sse-starlette>=3.4.5",
 ]
 
 [project.urls]
@@ -62,7 +59,7 @@ dependencies = [
 [dependency-groups]
 dev = [
   "httpx>=0.28.0",
-  "pytest>=8.4.0",
+  "pytest>=9.1.1",
   "pytest-asyncio>=1.0.0",
   "ruff>=0.12.0",
 ]
