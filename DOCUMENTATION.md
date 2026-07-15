@@ -1,12 +1,12 @@
-**Oremi Isinmi Agent** is a lightweight, AI-powered personal assistant designed
+**Oremi Isinmi** is a lightweight, AI-powered personal assistant designed
 to help you manage your reminders and events effortlessly. As a core
 subsystem of the Oremi personal assistant ecosystem, it combines the power of
 local or hosted LLMs with structured data management to provide intelligent,
 privacy-first time management.
 
-Project repository: https://gitlab.com/demsking/oremi-isinmi-agent
+Project repository: https://gitlab.com/demsking/oremi-isinmi
 
-![Oremi Isinmi Agent Logo](./static/logo.jpg)
+![Oremi Isinmi Logo](./static/logo.jpg)
 
 ## Why Oremi Isinmi?
 
@@ -29,7 +29,7 @@ This agent embodies that philosophy by offering:
 - **Real-time Notifications**: SSE streaming for immediate updates
 - **AI Conversation**: Chat with the agent to manage your schedule
 - **Encrypted Storage**: SQLAlchemy ORM with SQLCipher-backed SQLite and support for other SQL databases
-- **Lightweight Deployment**: Alpine-based [Docker image](https://hub.docker.com/r/demsking/oremi-isinmi-agent) for minimal resource usage
+- **Lightweight Deployment**: Alpine-based [Docker image](https://hub.docker.com/r/demsking/oremi-isinmi) for minimal resource usage
 
 ## Tags
 
@@ -66,7 +66,7 @@ group the conversation itself and any reminder created from it.
 
 ### Docker Image
 
-The [`demsking/oremi-isinmi-agent`](https://hub.docker.com/r/demsking/oremi-isinmi-agent)
+The [`demsking/oremi-isinmi`](https://hub.docker.com/r/demsking/oremi-isinmi)
 Docker image is officially available on Docker Hub, supporting both
 `linux/amd64` and `linux/arm64` platforms. The image is configured to expose
 port `7337`, which serves the API and documentation endpoints.
@@ -87,15 +87,15 @@ persist across container recreation, set `OREMI_ISINMI_LOG_FILE` to a path under
 
 ### Deploy with Docker
 
-Use the official Docker image [`demsking/oremi-isinmi-agent`](https://hub.docker.com/r/demsking/oremi-isinmi-agent)
-to run Oremi Isinmi Agent:
+Use the official Docker image [`demsking/oremi-isinmi`](https://hub.docker.com/r/demsking/oremi-isinmi)
+to run Oremi Isinmi:
 
 ```sh
 docker run -d \
   --env-file <path_to_env_file> \
-  -v ~/.config/oremi-isinmi-agent:/oremi/data \
+  -v ~/.config/oremi-isinmi:/oremi/data \
   -p 7337:7337 \
-  demsking/oremi-isinmi-agent
+  demsking/oremi-isinmi
 ```
 
 Replace `<path_to_env_file>` with the path to your
@@ -109,14 +109,14 @@ Create a `compose.yml` file:
 ```yaml
 services:
   agent:
-    image: demsking/oremi-isinmi-agent
+    image: demsking/oremi-isinmi
     restart: unless-stopped
     depends_on:
       - ollama
     ports:
       - 7337:7337
     volumes:
-      - ~/.config/oremi-isinmi-agent:/oremi/data
+      - ~/.config/oremi-isinmi:/oremi/data
     environment:
       OREMI_ISINMI_DATABASE_ENCRYPTION_KEY: ${OREMI_ISINMI_DATABASE_ENCRYPTION_KEY?Missing required environment variable}
       OREMI_ISINMI_OLLAMA_BASE_URL: http://ollama:11434
@@ -144,7 +144,7 @@ docker compose up -d
 
 ### Environment Variables
 
-When configuring **Oremi Isinmi Agent**, several environment variables are used to
+When configuring **Oremi Isinmi**, several environment variables are used to
 control its behavior and connect with external services. Below is a breakdown
 of these variables, grouped by their purpose.
 
@@ -330,7 +330,7 @@ and automated testing.
 
 For detailed information on setting up your development environment, running
 tests, code style guidelines, and the pull request process, please refer to
-[CONTRIBUTING.md](https://gitlab.com/demsking/oremi-isinmi-agent/-/blob/main/CONTRIBUTING.md).
+[CONTRIBUTING.md](https://gitlab.com/demsking/oremi-isinmi/-/blob/main/CONTRIBUTING.md).
 
 ## Versioning
 

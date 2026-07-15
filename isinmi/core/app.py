@@ -16,7 +16,6 @@ import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-import ollama
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.responses import JSONResponse
@@ -40,6 +39,7 @@ from ..services.notification_service import NotificationService
 from ..services.reminder_service import ReminderService
 from ..sse.manager import SSEManager
 from ..utils.logger import configure_logging
+from ..utils.ollama_model import load_ollama_model
 from .database import Database
 from .package import APP_DESCRIPTION
 from .package import APP_NAME
@@ -50,18 +50,7 @@ from .settings import Settings
 logger = logging.getLogger(__name__)
 
 
-async def _pull_ollama_model(settings: Settings) -> None:
-  """Pull configured Ollama model if enabled."""
-  try:
-    client = ollama.AsyncClient(host=settings.ollama_base_url, timeout=settings.llm_request_timeout)
-
-    await client.pull(settings.resolve_ollama_model_name(), stream=False)
-    logger.info(f"Ollama model ready: {settings.resolve_ollama_model_name()}")
-  except Exception as exception:
-    logger.warning(f"Could not pull Ollama model {settings.resolve_ollama_model_name()}: {exception}")
-
-
-def create_app(settings: Settings | None = None) -> tuple[FastAPI, Settings]:
+def create_app(settings: Settings | None = None) -> FastAPI:
   """Build the FastAPI application."""
 
   resolved_settings = settings or get_settings()
@@ -115,8 +104,11 @@ def create_app(settings: Settings | None = None) -> tuple[FastAPI, Settings]:
       app.state.event_service,
     )
 
-    if resolved_settings.uses_ollama():
-      await _pull_ollama_model(resolved_settings)
+    if resolved_settings.should_use_ollama:
+      if resolved_settings.ollama_base_url is None:
+        logger.warning("OREMI_ISINMI_OLLAMA_BASE_URL is not configured; LLM-backed endpoints will be unavailable")
+      else:
+        await load_ollama_model(resolved_settings)
 
     try:
       yield
@@ -184,4 +176,4 @@ def create_app(settings: Settings | None = None) -> tuple[FastAPI, Settings]:
   mcp.mount_http()
   app.state.mcp = mcp
 
-  return app, resolved_settings
+  return app

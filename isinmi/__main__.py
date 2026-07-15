@@ -19,15 +19,19 @@ import sys
 import uvicorn
 
 from isinmi import app
-from isinmi import settings
 from isinmi.core.package import APP_NAME
+from isinmi.core.package import APP_VERSION
+from isinmi.core.settings import get_settings
 from isinmi.utils.logger import LOGGER_DATE_FORMAT
 from isinmi.utils.logger import LOGGER_FORMAT
+
+__version__ = APP_VERSION
 
 logger = logging.getLogger(__name__)
 
 
 async def main() -> None:
+  settings = get_settings()
   config = uvicorn.Config(
     app=app,
     host=settings.server_host,
@@ -74,6 +78,6 @@ if __name__ == "__main__":
   except KeyboardInterrupt:
     pass
   except Exception as exc:
-    print("Oremi Isinmi Agent failed to start:", file=sys.stderr)
+    print("Oremi Isinmi failed to start:", file=sys.stderr)
     print(f"- {exc}", file=sys.stderr)
     sys.exit(4)

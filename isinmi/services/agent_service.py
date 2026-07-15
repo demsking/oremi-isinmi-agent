@@ -64,7 +64,7 @@ class AgentService:
       "timeout": self.settings.llm_request_timeout,
     }
 
-    if self.settings.uses_ollama():
+    if self.settings.should_use_ollama:
       if not self.settings.ollama_base_url:
         raise RuntimeError("OREMI_ISINMI_OLLAMA_BASE_URL is required when llm_model uses ollama")
 
@@ -73,7 +73,7 @@ class AgentService:
 
       return Agent(
         model=OllamaModel(
-          self.settings.resolve_ollama_model_name(),
+          self.settings.ollama_model_name,
           provider=OllamaProvider(base_url=f"{self.settings.ollama_base_url}/v1"),
           settings=model_settings,
         ),
@@ -115,7 +115,7 @@ class AgentService:
   def _build_agent_model(self):
     """Return the configured LLM backend model."""
 
-    if self.settings.uses_ollama():
+    if self.settings.should_use_ollama:
       if not self.settings.ollama_base_url:
         raise RuntimeError("OREMI_ISINMI_OLLAMA_BASE_URL is required when llm_model uses ollama")
 
@@ -123,7 +123,7 @@ class AgentService:
       from pydantic_ai.providers.ollama import OllamaProvider  # pylint: disable=import-outside-toplevel
 
       return OllamaModel(
-        self.settings.resolve_ollama_model_name(),
+        self.settings.ollama_model_name,
         provider=OllamaProvider(base_url=f"{self.settings.ollama_base_url}/v1"),
       )
 

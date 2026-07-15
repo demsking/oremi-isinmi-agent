@@ -35,7 +35,7 @@
         "-v"
       ],
       "cwd": "${workspaceFolder}",
-      "envFile": "${workspaceFolder}/.env",
+      "envFile": "${workspaceFolder}/.env.example",
       "console": "integratedTerminal",
       "justMyCode": true
     }

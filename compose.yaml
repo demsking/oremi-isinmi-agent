@@ -1,4 +1,5 @@
-version: "3.8"
+---
+name: dev-oremi-isinmi
 
 services:
   ollama:
@@ -12,3 +13,4 @@ services:
       - ~/.ollama:/root/.ollama
     environment:
       CUDA_VISIBLE_DEVICES: 0
+...

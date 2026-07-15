@@ -47,7 +47,7 @@ async def html_documentation():
       <head>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Oremi Isinmi Agent Documentation</title>
+        <title>Oremi Isinmi Documentation</title>
         <link rel="icon" href="./static/favicon.png">
       </head>
       <body>
@@ -58,7 +58,7 @@ async def html_documentation():
           const openapi = await response.json();
           const isGitlabPage = location.origin.includes('gitlab.io');
 
-          openapi.info.title = 'Oremi Isinmi Agent Documentation';
+          openapi.info.title = 'Oremi Isinmi Documentation';
           openapi.info.description = "{SERVICE_DESCRIPTION.replace('"', '\\"').replace("\n", "\\n")}";
 
           if (isGitlabPage) {{
@@ -66,7 +66,7 @@ async def html_documentation():
           }}
 
           Scalar.createApiReference('#app', {{
-            title: 'Oremi Isinmi Agent API',
+            title: 'Oremi Isinmi API',
             agent: {{
               disabled: true,
             }},

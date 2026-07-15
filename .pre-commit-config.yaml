@@ -106,3 +106,4 @@ repos:
         name: "Bandit Security Linter"
         description: "Runs Bandit to find common security issues in Python code."
         args: [-c, bandit.yaml]
+

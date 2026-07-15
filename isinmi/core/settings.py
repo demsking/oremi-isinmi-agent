@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+from functools import cached_property
 from functools import lru_cache
 from typing import Literal
 
 from pydantic import Field
 from pydantic import field_validator
+from pydantic import HttpUrl
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
@@ -68,7 +70,7 @@ class Settings(BaseSettings):
     description="System prompt for the AI agent.",
   )
 
-  ollama_base_url: str | None = Field(
+  ollama_base_url: HttpUrl | None = Field(
     default=None,
     description="Ollama API base URL used when the agent runs on Ollama.",
   )
@@ -76,9 +78,7 @@ class Settings(BaseSettings):
   database_url: str = Field(default="sqlite:///./oremi_isinmi.db", description="Database connection URL.")
   database_encryption_key: SecretStr = Field(..., description="Encryption key for SQLite database.")
 
-  log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
-    default="INFO", description="Logging level."
-  )
+  log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(default="INFO", description="Logging level.")
   log_file: str = Field(default="oremi_isinmi.log", description="Path to rotating log file.")
 
   @field_validator("api_prefix")
@@ -88,6 +88,15 @@ class Settings(BaseSettings):
       raise ValueError("OREMI_ISINMI_API_PREFIX must start with '/'")
 
     return value.rstrip("/") or "/"
+
+  @field_validator("ollama_base_url", mode="before")
+  @classmethod
+  def validate_ollama_base_url(cls, value):
+    """Remove trailing slashes from Ollama host URL."""
+    if isinstance(value, str):
+      value = value.rstrip("/")
+
+    return value
 
   @field_validator("database_url")
   @classmethod
@@ -107,17 +116,26 @@ class Settings(BaseSettings):
 
     return value
 
-  def uses_ollama(self) -> bool:
+  @cached_property
+  def should_use_ollama(self) -> bool:
     """Return whether the active agent model uses the Ollama backend."""
+    return self.llm_model.startswith("ollama:")  # pylint: disable=no-member
 
-    return self.llm_model.startswith("ollama:")
-
-  def resolve_ollama_model_name(self) -> str:
+  @cached_property
+  def ollama_model_name(self) -> str:
     """Return the Ollama model name without provider prefix."""
     return self.llm_model.removeprefix("ollama:")  # pylint: disable=no-member
+
+  @cached_property
+  def ollama_base_url_string(self) -> str:
+    """Return the Ollama base URL for Pydantic AI."""
+    if self.ollama_base_url is None:
+      raise ValueError("OREMI_AKORIN_OLLAMA_BASE_URL is required when using an ollama: model")
+
+    return str(self.ollama_base_url).rstrip("/")
 
 
 @lru_cache
 def get_settings() -> Settings:
   """Return cached application settings."""
-  return Settings()
+  return Settings()  # pyright: ignore

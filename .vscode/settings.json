@@ -5,6 +5,18 @@
   "files.eol": "\n",
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
+  "files.exclude": {
+    "**/.devbox": true,
+    "**/.directory": true,
+    "**/.coverage": true,
+    "**/.direnv": true,
+    "**/.ruff_cache": true,
+    "**/.venv": true,
+    "**/.pytest_cache": true,
+    "**/*.egg-info": true,
+    "**/__pycache__": true,
+    "**/dist": true
+  },
   "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
   "python.envFile": "${workspaceFolder}/.env.example",
   "python.testing.pytestEnabled": true,

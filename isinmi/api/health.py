@@ -25,7 +25,7 @@ API_TAG_METADATA = {
   "name": "Server Endpoints",
   "description": (
     "Operational health and readiness endpoints. Use this tag for lightweight checks that confirm the "
-    "API process is alive and report basic runtime metadata such as version, active AI model, and encryption."
+    "API process is alive and report basic runtime metadata such as version and active AI model."
   ),
 }
 

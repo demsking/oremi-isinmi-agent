@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 try:
-  app, settings = create_app()
+  app = create_app()
 except ValidationError as exc:
   logger.error("Invalid Oremi Isinmi configuration:")
 

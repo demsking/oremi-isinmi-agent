@@ -19,19 +19,19 @@ def test_log_level_is_normalized() -> None:
   assert settings.log_level == "DEBUG"
 
 
-def test_default_llm_model_uses_ollama() -> None:
+def test_default_llm_model_should_use_ollama -> None:
   settings = Settings(database_encryption_key="x" * 32)
 
   assert settings.llm_model == "ollama:qwen3.5:2b"
-  assert settings.uses_ollama() is True
-  assert settings.resolve_ollama_model_name() == "qwen3.5:2b"
+  assert settings.should_use_ollama is True
+  assert settings.ollama_model_name == "qwen3.5:2b"
 
 
 def test_custom_llm_model_disables_ollama_backend() -> None:
   settings = Settings(database_encryption_key="x" * 32, llm_model="openai:gpt-4.1-mini")
 
   assert settings.llm_model == "openai:gpt-4.1-mini"
-  assert settings.uses_ollama() is False
+  assert settings.should_use_ollama is False
 
 
 def test_llm_temperature_defaults_and_validates() -> None:

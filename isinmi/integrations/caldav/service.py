@@ -216,7 +216,7 @@ class CalDAVSyncService:
     lines = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
-      "PRODID:-//Oremi Isinmi Agent//CalDAV Integration//EN",
+      "PRODID:-//Oremi Isinmi//CalDAV Integration//EN",
       "CALSCALE:GREGORIAN",
       "BEGIN:VEVENT",
       f"UID:{self._escape_ical(remote_uid)}",

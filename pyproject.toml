@@ -1,5 +1,5 @@
 [project]
-name = "oremi-isinmi-agent"
+name = "oremi-isinmi"
 version = "1.0.0-beta15"
 description = "Encrypted reminders, scheduling, tags, SSE, and natural language agent API."
 authors = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
@@ -29,6 +29,15 @@ keywords = [
   "task-management",
 ]
 
+classifiers = [
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Natural Language :: English",
+  "Natural Language :: French",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Programming Language :: Python :: 3.12",
+]
+
 dependencies = [
   "alembic>=1.16.0",
   "fastapi-mcp>=0.4.0",
@@ -46,9 +55,9 @@ dependencies = [
 
 [project.urls]
 "Say Thanks!" = "https://www.buymeacoffee.com/demsking"
-"Documentation" = "https://demsking.gitlab.io/oremi-isinmi-agent"
-"Source" = "https://gitlab.com/demsking/oremi-isinmi-agent"
-"Issues" = "https://gitlab.com/demsking/oremi-isinmi-agent/-/issues"
+"Documentation" = "https://demsking.gitlab.io/oremi-isinmi"
+"Source" = "https://gitlab.com/demsking/oremi-isinmi"
+"Issues" = "https://gitlab.com/demsking/oremi-isinmi/-/issues"
 
 [dependency-groups]
 dev = [

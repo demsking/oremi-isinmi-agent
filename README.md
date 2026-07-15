@@ -1,23 +1,23 @@
-# Oremi Isinmi Agent
+# Oremi Isinmi
 
 [![Buy me a beer](https://img.shields.io/badge/Buy%20me-a%20beer-1f425f.svg)](https://www.buymeacoffee.com/demsking)
 
-Oremi Isinmi Agent is the reminders, scheduling, tags, and notification
+Oremi Isinmi is the reminders, scheduling, tags, and notification
 subsystem for the Oremi personal assistant project. It uses FastAPI, Pydantic,
 SQLCipher-encrypted SQLite, Server-Sent Events, and Pydantic-AI with Ollama as
 the default backend.
 
-The name **"Oremi Isinmi Agent"** comes from two Yorùbá words: _Oremi_,
+The name **"Oremi Isinmi"** comes from two Yorùbá words: _Oremi_,
 meaning "my friend", and _Isinmi_, meaning "rest" or "appointment". Together,
 the name conveys the idea of a friendly assistant that helps you manage your
 time and commitments efficiently, bringing calm and order to your daily life.
 
-![Oremi Isinmi Agent Logo](htdocs/logo.jpg)
+![Oremi Isinmi Logo](htdocs/logo.jpg)
 
 ## Documentation
 
-Find the Oremi Isinmi Agent deployment and API documentation at
-[https://demsking.gitlab.io/oremi-isinmi-agent](https://demsking.gitlab.io/oremi-isinmi-agent).
+Find the Oremi Isinmi deployment and API documentation at
+[https://demsking.gitlab.io/oremi-isinmi](https://demsking.gitlab.io/oremi-isinmi).
 
 ## Core Capabilities
 
@@ -27,7 +27,7 @@ Find the Oremi Isinmi Agent deployment and API documentation at
 - **Real-time Notifications**: SSE streaming for immediate updates
 - **AI Conversation**: Chat with the agent to manage your schedule
 - **Encrypted Storage**: All data secured with SQLCipher
-- **Lightweight Deployment**: Alpine-based [Docker image](https://hub.docker.com/r/demsking/oremi-isinmi-agent) for minimal resource usage
+- **Lightweight Deployment**: Alpine-based [Docker image](https://hub.docker.com/r/demsking/oremi-isinmi) for minimal resource usage
 
 ## Use Cases
 
@@ -44,7 +44,7 @@ and `Health` are not exported as MCP tools.
 
 ## Contribute
 
-Please follow [CONTRIBUTING.md](https://gitlab.com/demsking/oremi-isinmi-agent/blob/main/CONTRIBUTING.md).
+Please follow [CONTRIBUTING.md](https://gitlab.com/demsking/oremi-isinmi/blob/main/CONTRIBUTING.md).
 
 ## Versioning
 
@@ -62,7 +62,8 @@ See [SemVer.org](https://semver.org/) for more details.
 
 ## License
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-this file except in compliance with the License.
-You may obtain a copy of the License at
-[LICENSE](https://gitlab.com/demsking/oremi-isinmi-agent/blob/main/LICENSE).
+Copyright 2026 Sébastien Demanou. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0. See the
+[LICENSE](https://gitlab.com/demsking/oremi-isinmi/-/blob/main/LICENSE) for the
+complete license text.
