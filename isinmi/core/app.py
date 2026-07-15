@@ -21,7 +21,6 @@ from fastapi.responses import HTMLResponse
 from fastapi.responses import JSONResponse
 from fastapi_mcp import FastApiMCP
 
-from ..api import agent
 from ..api import caldav
 from ..api import docs
 from ..api import events
@@ -33,13 +32,11 @@ from ..repositories.caldav_repository import CalDAVRepository
 from ..repositories.event_repository import EventRepository
 from ..repositories.notification_repository import NotificationRepository
 from ..repositories.reminder_repository import ReminderRepository
-from ..services.agent_service import AgentService
 from ..services.event_service import EventService
 from ..services.notification_service import NotificationService
 from ..services.reminder_service import ReminderService
 from ..sse.manager import SSEManager
 from ..utils.logger import configure_logging
-from ..utils.ollama_model import load_ollama_model
 from .database import Database
 from .package import APP_DESCRIPTION
 from .package import APP_NAME
@@ -48,6 +45,14 @@ from .settings import get_settings
 from .settings import Settings
 
 logger = logging.getLogger(__name__)
+
+
+def log_startup_settings(settings: Settings) -> None:
+  """Log every configured application setting without exposing secrets."""
+  for name in settings.__class__.model_fields:
+    value = getattr(settings, name)
+    display_value = "[set]" if name == "database_encryption_key" else value
+    logger.info("Setting %s: %s", name, display_value)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -59,18 +64,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
   @asynccontextmanager
   async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info(f"{APP_NAME} v{APP_VERSION}")
-    logger.info(f"Server: http://{resolved_settings.server_host}:{resolved_settings.server_port}")
-    logger.info(f"API Docs: http://{resolved_settings.server_host}:{resolved_settings.server_port}/docs")
-    logger.info("API Prefix: %s", resolved_settings.api_prefix)
-    logger.info("LLM Model: %s", resolved_settings.llm_model)
-    logger.info("LLM Request Timeout: %s", resolved_settings.llm_request_timeout)
-    logger.info("LLM Temperature: %s", resolved_settings.llm_temperature)
-    logger.info("Ollama Base URL: %s", resolved_settings.ollama_base_url)
-    logger.info("Database URL: %s", resolved_settings.database_url)
-    logger.info("Database Encryption Key: [set]")
-    logger.info("Log Level: %s", resolved_settings.log_level)
-    logger.info("Log File: %s", resolved_settings.log_file)
-    logger.info("SSE Retry Timeout: %s", resolved_settings.sse_retry_timeout)
+    log_startup_settings(resolved_settings)
 
     db = Database(resolved_settings)
 
@@ -91,23 +85,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.caldav_service = CalDAVSyncService(
       caldav_repository,
       event_repository,
-      resolved_settings.llm_request_timeout,
+      resolved_settings.caldav_request_timeout_seconds,
     )
 
     app.state.event_service.set_caldav_sync_service(app.state.caldav_service)
-
-    app.state.agent_service = AgentService(
-      resolved_settings,
-      db,
-      reminder_service,
-      app.state.event_service,
-    )
-
-    if resolved_settings.should_use_ollama:
-      if resolved_settings.ollama_base_url is None:
-        logger.warning("OREMI_ISINMI_OLLAMA_BASE_URL is not configured; LLM-backed endpoints will be unavailable")
-      else:
-        await load_ollama_model(resolved_settings)
 
     try:
       yield
@@ -129,7 +110,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
       "url": "http://www.apache.org/licenses/LICENSE-2.0.html",
     },
     openapi_tags=[
-      agent.API_TAG_METADATA,
       reminders.API_TAG_METADATA,
       events.API_TAG_METADATA,
       caldav.API_TAG_METADATA,
@@ -154,7 +134,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
   app.include_router(events.router, prefix=api_prefix)
   app.include_router(caldav.router, prefix=api_prefix)
   app.include_router(notifications.router, prefix=api_prefix)
-  app.include_router(agent.router, prefix=api_prefix)
   app.include_router(health.router, prefix=prefix)
   app.include_router(docs.router, prefix=prefix)
 

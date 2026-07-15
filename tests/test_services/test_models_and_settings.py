@@ -1,10 +1,12 @@
 """Model and settings tests."""
 
+import logging
 from datetime import datetime, timedelta
 
 import pytest
 from pydantic import ValidationError
 
+from isinmi.core.app import log_startup_settings
 from isinmi.core.models import AgentChatRequest, EventCreate, ReminderCreate
 from isinmi.core.settings import Settings
 
@@ -19,27 +21,19 @@ def test_log_level_is_normalized() -> None:
   assert settings.log_level == "DEBUG"
 
 
-def test_default_llm_model_should_use_ollama -> None:
-  settings = Settings(database_encryption_key="x" * 32)
+def test_startup_logs_every_setting_without_exposing_secrets(caplog: pytest.LogCaptureFixture) -> None:
+  secret = "secret-value-that-must-never-be-logged"
+  settings = Settings(database_encryption_key=secret)
 
-  assert settings.llm_model == "ollama:qwen3.5:2b"
-  assert settings.should_use_ollama is True
-  assert settings.ollama_model_name == "qwen3.5:2b"
+  with caplog.at_level(logging.INFO, logger="isinmi.core.app"):
+    log_startup_settings(settings)
 
+  output = caplog.text
+  for name in Settings.model_fields:
+    assert f"Setting {name}:" in output
 
-def test_custom_llm_model_disables_ollama_backend() -> None:
-  settings = Settings(database_encryption_key="x" * 32, llm_model="openai:gpt-4.1-mini")
-
-  assert settings.llm_model == "openai:gpt-4.1-mini"
-  assert settings.should_use_ollama is False
-
-
-def test_llm_temperature_defaults_and_validates() -> None:
-  settings = Settings(database_encryption_key="x" * 32)
-  assert settings.llm_temperature == 0.3
-
-  custom = Settings(database_encryption_key="x" * 32, llm_temperature=0.7)
-  assert custom.llm_temperature == 0.7
+  assert "Setting database_encryption_key: [set]" in output
+  assert secret not in output
 
 
 def test_tags_are_normalized_and_deduplicated() -> None:

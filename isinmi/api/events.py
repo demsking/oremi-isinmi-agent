@@ -28,7 +28,9 @@ from sse_starlette.sse import EventSourceResponse
 from ..core.models import Event
 from ..core.models import EventCreate
 from ..core.models import EventUpdate
+from ..core.settings import Settings
 from ..services.event_service import EventService
+from ..sse.manager import SSEManager
 from ..utils.validators import ensure_date_range
 from ..utils.validators import parse_tags_query
 
@@ -231,6 +233,14 @@ def service(request: Request) -> EventService:
   return request.app.state.event_service
 
 
+def sse_manager(request: Request) -> SSEManager:
+  return request.app.state.sse_manager
+
+
+def settings(request: Request) -> Settings:
+  return request.app.state.settings
+
+
 @router.get(
   "/stream",
   operation_id="stream_events",
@@ -246,13 +256,14 @@ async def stream_events(
     openapi_examples=EVENT_STREAM_QUERY_EXAMPLES,
   ),
 ) -> EventSourceResponse:
-  manager = request.app.state.sse_manager
+  manager = sse_manager(request)
   subscriber = await manager.subscribe(parse_tags_query(tags))
-  retry_timeout = request.app.state.settings.SSE_RETRY_TIMEOUT
+  sse_retry_timeout_seconds = settings(request).sse_retry_timeout_seconds
+  sse_retry_timeout_miliseconds = sse_retry_timeout_seconds * 1000
 
   async def event_generator():
     try:
-      yield {"retry": retry_timeout}
+      yield {"retry": sse_retry_timeout_miliseconds}
 
       while True:
         if await request.is_disconnected():

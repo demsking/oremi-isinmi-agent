@@ -13,13 +13,11 @@
 # limitations under the License.
 # ==============================================================================
 from fastapi import APIRouter
-from fastapi import Request
 from pydantic import BaseModel
 from pydantic import Field
 
 from ..core.package import APP_NAME
 from ..core.package import APP_VERSION
-from ..core.settings import Settings
 
 API_TAG_METADATA = {
   "name": "Server Endpoints",
@@ -36,11 +34,13 @@ class ServerHealth(BaseModel):
   status: str = Field(..., description="Health status of the API, typically 'ok' if healthy.")
   app: str = Field(..., description="Name of the application.")
   version: str = Field(..., description="Version of the application.")
-  llm_model: str = Field(..., description="Configured AI model identifier used by the agent.")
 
 
-def get_app_settings(request: Request) -> Settings:
-  return request.app.state.settings
+server_status = ServerHealth(
+  status="ok",
+  app=APP_NAME,
+  version=APP_VERSION,
+)
 
 
 @router.get(
@@ -51,29 +51,7 @@ def get_app_settings(request: Request) -> Settings:
     "The response confirms the API is alive and includes the application version, active AI model, backend "
     "type, and whether encrypted storage is enabled."
   ),
-  responses={
-    200: {
-      "content": {
-        "application/json": {
-          "example": ServerHealth.model_validate(
-            {
-              "status": "ok",
-              "app": APP_NAME,
-              "version": APP_VERSION,
-              "llm_model": "ollama:qwen3.5:2b",
-            }
-          )
-        }
-      }
-    }
-  },
+  responses={200: {"content": {"application/json": {"example": server_status}}}},
 )
-async def health(request: Request) -> ServerHealth:
-  settings = get_app_settings(request)
-
-  return ServerHealth(
-    status="ok",
-    app=APP_NAME,
-    version=APP_VERSION,
-    llm_model=settings.llm_model,
-  )
+async def health() -> ServerHealth:
+  return server_status

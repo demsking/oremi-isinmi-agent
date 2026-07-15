@@ -1,7 +1,7 @@
 **Oremi Isinmi** is a lightweight, AI-powered personal assistant designed
 to help you manage your reminders and events effortlessly. As a core
-subsystem of the Oremi personal assistant ecosystem, it combines the power of
-local or hosted LLMs with structured data management to provide intelligent,
+subsystem of the Oremi personal assistant ecosystem, it combines natural
+language interaction with structured data management to provide intelligent,
 privacy-first time management.
 
 Project repository: https://gitlab.com/demsking/oremi-isinmi
@@ -19,7 +19,7 @@ This agent embodies that philosophy by offering:
 - **Smart Organization**: Use tags to group and filter records by device, UUID, source, user, or workflow
 - **Privacy First**: Everything stays on your device with encrypted local storage
 - **Real-time Notifications**: Stay informed with Server-Sent Events for reminders and events
-- **AI-Powered Understanding**: Uses a configurable LLM backend with Ollama as the default
+- **Natural Language Understanding**: Converts conversational requests into structured actions
 
 ## Core Capabilities
 
@@ -59,7 +59,7 @@ group the conversation itself and any reminder created from it.
 
 - Default SQLite storage is encrypted locally via SQLCipher
 - Encryption key required at startup (provided via environment variable)
-- No external data transmission (except optional Ollama API)
+- Remote data is transmitted only to CalDAV servers that you explicitly configure
 - Local-first architecture ensures data sovereignty
 
 ## Deployment
@@ -108,32 +108,17 @@ Create a `compose.yml` file:
 
 ```yaml
 services:
-  agent:
+  isinmi:
     image: demsking/oremi-isinmi
     restart: unless-stopped
-    depends_on:
-      - ollama
     ports:
       - 7337:7337
     volumes:
       - ~/.config/oremi-isinmi:/oremi/data
     environment:
       OREMI_ISINMI_DATABASE_ENCRYPTION_KEY: ${OREMI_ISINMI_DATABASE_ENCRYPTION_KEY?Missing required environment variable}
-      OREMI_ISINMI_OLLAMA_BASE_URL: http://ollama:11434
     env_file:
       - .env
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7337/health/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  ollama:
-    image: ollama/ollama
-    restart: always
-    runtime: nvidia
-    volumes:
-      - ~/.ollama:/root/.ollama
 ```
 
 Run the container using `docker compose`:
@@ -153,37 +138,12 @@ the environment or a `.env` file in the working directory.
 
 #### Application and Server Settings
 
-- `OREMI_ISINMI_SERVER_HOST`: Optional. Defaults to `0.0.0.0`. Host interface used by
+- `OREMI_ISINMI_SERVER_HOST`: Optional. Defaults to `127.0.0.1`. Host interface used by
   the Oremi Isinmi server.
 - `OREMI_ISINMI_SERVER_PORT`: Optional. Defaults to `7337`. Port used by the
   Oremi Isinmi server.
 - `OREMI_ISINMI_API_PREFIX`: Optional. Defaults to `/`. Prefix for all API
   routes. Must start with `/`.
-
-#### LLM Settings
-
-- `OREMI_ISINMI_LLM_MODEL`: Optional. Defaults to `ollama:qwen3.5:2b` when
-  omitted. Fully qualified Pydantic-AI model identifier. Use provider-prefixed
-  values such as `ollama:qwen3.5:2b`, `openai:gpt-4.1-mini`, or
-  `anthropic:claude-sonnet-4-0`.
-- `OREMI_ISINMI_LLM_REQUEST_TIMEOUT`: Optional. Defaults to `15`. Timeout in
-  seconds used for agent calls and Ollama pulls. Valid range: `1` to `300`.
-- `OREMI_ISINMI_LLM_TEMPERATURE`: Optional. Defaults to `0.3`. Sampling
-  temperature used by the configured LLM backend. Valid range: `0.0` to `2.0`.
-- `OREMI_ISINMI_OLLAMA_BASE_URL`: Optional. Ollama API base URL used only when
-  the active agent model runs on Ollama.
-
-**Examples for `OREMI_ISINMI_LLM_MODEL`:**
-
-- Ollama default:
-  - `ollama:qwen3.5:2b`
-  - Use this for local development or a self-hosted Ollama deployment.
-- ChatGPT / OpenAI:
-  - `openai:gpt-4.1-mini`
-  - Use this when the OpenAI API key is available in the environment.
-- Claude / Anthropic:
-  - `anthropic:claude-sonnet-4-0`
-  - Use this when the Anthropic API key is available in the environment.
 
 #### Database Settings
 
@@ -206,9 +166,15 @@ and store it in your `.env` file without extra spaces or quotes.
 
 #### Realtime Notification Settings
 
-- `OREMI_ISINMI_SSE_RETRY_TIMEOUT`: Optional. Defaults to `30000`.
-  Server-Sent Events retry timeout in milliseconds. Valid range: `1000` to
-  `120000`.
+- `OREMI_ISINMI_SSE_RETRY_TIMEOUT_SECONDS`: Optional. Defaults to `30`.
+  Server-Sent Events client retry interval in seconds. Valid range: `1` to
+  `120`.
+
+#### CalDAV Settings
+
+- `OREMI_ISINMI_CALDAV_REQUEST_TIMEOUT_SECONDS`: Optional. Defaults to `30`.
+  Maximum time in seconds to wait for a CalDAV server response. Valid range:
+  `1` to `300`.
 
 #### Logging Settings
 
@@ -222,21 +188,11 @@ and store it in your `.env` file without extra spaces or quotes.
 OREMI_ISINMI_API_PREFIX=/
 OREMI_ISINMI_SERVER_HOST=0.0.0.0
 OREMI_ISINMI_SERVER_PORT=7337
-OREMI_ISINMI_LLM_MODEL=ollama:qwen3.5:2b
-OREMI_ISINMI_LLM_REQUEST_TIMEOUT=15
-OREMI_ISINMI_LLM_TEMPERATURE=0.3
-OREMI_ISINMI_OLLAMA_BASE_URL=http://localhost:11434
 OREMI_ISINMI_DATABASE_URL=sqlite:///oremi/data/oremi_isinmi.db
 OREMI_ISINMI_DATABASE_ENCRYPTION_KEY=replace-this-with-at-least-32-characters
 OREMI_ISINMI_LOG_LEVEL=INFO
-OREMI_ISINMI_SSE_RETRY_TIMEOUT=30000
-```
-
-For Docker Compose, point Ollama traffic at the Compose service name when the
-agent backend is Ollama:
-
-```env
-OREMI_ISINMI_OLLAMA_BASE_URL=http://ollama:11434
+OREMI_ISINMI_SSE_RETRY_TIMEOUT_SECONDS=30
+OREMI_ISINMI_CALDAV_REQUEST_TIMEOUT_SECONDS=30
 ```
 
 ### Storage Layer
