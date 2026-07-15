@@ -185,11 +185,6 @@ the environment or a `.env` file in the working directory.
   - `anthropic:claude-sonnet-4-0`
   - Use this when the Anthropic API key is available in the environment.
 
-#### LLM Behavior Settings
-
-- `OREMI_ISINMI_LLM_SYSTEM_PROMPT`: Optional. Defaults to the built-in Oremi
-  Isinmi prompt. System prompt used by the natural-language agent.
-
 #### Database Settings
 
 - `OREMI_ISINMI_DATABASE_URL`: Optional. Defaults to

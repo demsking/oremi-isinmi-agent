@@ -65,7 +65,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     logger.info("LLM Model: %s", resolved_settings.llm_model)
     logger.info("LLM Request Timeout: %s", resolved_settings.llm_request_timeout)
     logger.info("LLM Temperature: %s", resolved_settings.llm_temperature)
-    logger.info("LLM System Prompt: %s", resolved_settings.llm_system_prompt.replace("\n", " ").strip())
     logger.info("Ollama Base URL: %s", resolved_settings.ollama_base_url)
     logger.info("Database URL: %s", resolved_settings.database_url)
     logger.info("Database Encryption Key: [set]")

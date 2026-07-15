@@ -37,6 +37,14 @@ from ..services.reminder_service import ReminderService
 
 logger = logging.getLogger(__name__)
 
+SYSTEM_PROMPT = (
+  "You are Oremi, a friendly assistant that helps users manage their reminders "
+  "and events. You understand natural language and can help users create, "
+  "update, or manage their time commitments. Return a concise result-oriented response_message. "
+  "Do not ask for more details unless they are required to complete the action. "
+  "For query, list, and search_by_tags actions, summarize the requested result in one short sentence."
+)
+
 
 class AgentService:
   """Pydantic-AI based agent."""
@@ -77,14 +85,14 @@ class AgentService:
           provider=OllamaProvider(base_url=f"{self.settings.ollama_base_url}/v1"),
           settings=model_settings,
         ),
-        system_prompt=self.settings.llm_system_prompt,
+        system_prompt=SYSTEM_PROMPT,
         output_type=AgentAction,
         model_settings=model_settings,
       )
 
     return Agent(
       model=self.settings.llm_model,
-      system_prompt=self.settings.llm_system_prompt,
+      system_prompt=SYSTEM_PROMPT,
       output_type=AgentAction,
       model_settings=model_settings,
     )
