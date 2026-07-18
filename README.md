@@ -2,10 +2,11 @@
 
 [![Buy me a beer](https://img.shields.io/badge/Buy%20me-a%20beer-1f425f.svg)](https://www.buymeacoffee.com/demsking)
 
-Oremi Isinmi is the reminders, scheduling, tags, and notification
-subsystem for the Oremi personal assistant project. It uses FastAPI, Pydantic,
-SQLCipher-encrypted SQLite, Server-Sent Events, and Pydantic-AI with Ollama as
-the default backend.
+**Oremi Isinmi** is the reminders, scheduling, tagging, and notification
+subsystem of the Oremi personal assistant ecosystem. It provides a REST API
+and MCP interface that help AI assistants and autonomous agents manage
+reminders, schedules, tags, and notifications through a secure and intelligent
+platform.
 
 The name **"Oremi Isinmi"** comes from two Yorùbá words: _Oremi_,
 meaning "my friend", and _Isinmi_, meaning "rest" or "appointment". Together,
@@ -19,46 +20,25 @@ time and commitments efficiently, bringing calm and order to your daily life.
 Find the Oremi Isinmi deployment and API documentation at
 [https://demsking.gitlab.io/oremi-isinmi](https://demsking.gitlab.io/oremi-isinmi).
 
-## Core Capabilities
+## Development
 
-- **Intelligent Reminder Management**: Create, update, and track reminders with natural language
-- **Smart Event Scheduling**: Plan events with automatic reminder generation
-- **Tag-Based Organization**: Filter and find items instantly using custom tags
-- **Real-time Notifications**: SSE streaming for immediate updates
-- **AI Conversation**: Chat with the agent to manage your schedule
-- **Encrypted Storage**: All data secured with SQLCipher
-- **Lightweight Deployment**: Alpine-based [Docker image](https://hub.docker.com/r/demsking/oremi-isinmi) for minimal resource usage
+Oremi Isinmi is built with Python and uses `uv` for dependency management. The
+project follows standard Python development practices with type hints, linting,
+and automated testing.
 
-## Use Cases
-
-- **Personal Time Management**: "Remind me to call the dentist tomorrow at 2pm"
-- **Event Planning**: "Schedule a team meeting for Friday at 10am, tag it as 'work'"
-- **Information Retrieval**: "Show me all my personal reminders for next week"
-- **Tag Organization**: "List all events tagged as 'urgent' and 'work'"
-
-## Model Context Protocol
-
-The app exposes an MCP HTTP endpoint at `/mcp`. The available tools are derived
-from the `Reminders`, `Events`, and `Notifications` API tags. `Agent`
-and `Health` are not exported as MCP tools.
-
-## Contribute
-
-Please follow [CONTRIBUTING.md](https://gitlab.com/demsking/oremi-isinmi/blob/main/CONTRIBUTING.md).
+For detailed information on setting up your development environment, running
+tests, code style guidelines, and the pull request process, please refer to
+[CONTRIBUTING.md](https://gitlab.com/demsking/oremi-isinmi/-/blob/main/CONTRIBUTING.md).
 
 ## Versioning
 
 Given a version number `MAJOR.MINOR.PATCH`, increment the:
+This project adheres to [Semantic Versioning](https://semver.org/) (SemVer).
+Version numbers follow the `MAJOR.MINOR.PATCH` format:
 
-- `MAJOR` version when you make incompatible API changes,
-- `MINOR` version when you add functionality in a backwards-compatible manner,
-  and
-- `PATCH` version when you make backwards-compatible bug fixes.
-
-Additional labels for pre-release and build metadata are available as extensions
-to the `MAJOR.MINOR.PATCH` format.
-
-See [SemVer.org](https://semver.org/) for more details.
+- **MAJOR** version increments for incompatible API changes
+- **MINOR** version increments for backward-compatible new functionality
+- **PATCH** version increments for backward-compatible bug fixes
 
 ## License
 

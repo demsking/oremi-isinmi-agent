@@ -19,11 +19,11 @@ from datetime import timedelta
 
 from fastapi import HTTPException
 
-from ..core.models import Reminder
-from ..core.models import ReminderCreate
-from ..core.models import ReminderUpdate
-from ..repositories.reminder_repository import ReminderRepository
-from ..services.notification_service import NotificationService
+from isinmi.core.models import Reminder
+from isinmi.core.models import ReminderCreate
+from isinmi.core.models import ReminderUpdate
+from isinmi.repositories.reminder_repository import ReminderRepository
+from isinmi.services.notification_service import NotificationService
 
 
 class ReminderService:
@@ -40,6 +40,14 @@ class ReminderService:
     await self.notifications.create("reminder", f"Reminder scheduled: {saved.title}", saved.id, saved.tags)
 
     return saved
+
+  async def get(self, reminder_id: str) -> Reminder:
+    reminder = await self.repository.get(reminder_id)
+
+    if not reminder:
+      raise HTTPException(status_code=404, detail="Reminder not found")
+
+    return reminder
 
   async def list(
     self,

@@ -38,7 +38,7 @@ classifiers = [
 
 dependencies = [
   "alembic>=1.16.0",
-  "fastapi-mcp>=0.4.0",
+  "mcp>=1.28.1",
   "fastapi[standard]>=0.115.0",
   "httpx>=0.28.0",
   "ollama>=0.5.0",

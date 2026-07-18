@@ -19,7 +19,7 @@ from pydantic import ValidationError
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.exc import SQLAlchemyError
 
-from .core.app import create_app
+from isinmi.core.app import create_app
 
 logger = logging.getLogger(__name__)
 

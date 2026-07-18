@@ -25,14 +25,14 @@ from fastapi import Request
 from fastapi.openapi.models import Example
 from sse_starlette.sse import EventSourceResponse
 
-from ..core.models import Event
-from ..core.models import EventCreate
-from ..core.models import EventUpdate
-from ..core.settings import Settings
-from ..services.event_service import EventService
-from ..sse.manager import SSEManager
-from ..utils.validators import ensure_date_range
-from ..utils.validators import parse_tags_query
+from isinmi.core.models import Event
+from isinmi.core.models import EventCreate
+from isinmi.core.models import EventUpdate
+from isinmi.core.settings import Settings
+from isinmi.services.event_service import EventService
+from isinmi.sse.manager import SSEManager
+from isinmi.utils.validators import ensure_date_range
+from isinmi.utils.validators import parse_tags_query
 
 API_TAG_METADATA = {
   "name": "Events Endpoints",

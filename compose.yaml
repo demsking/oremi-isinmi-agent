@@ -1,5 +1,13 @@
 ---
 name: dev-oremi-isinmi
 
-services: {}
+services:
+  inspector:
+    image: ghcr.io/modelcontextprotocol/inspector:0.22.0
+    ports:
+      - "6474:6274"
+    environment:
+      HOST: 0.0.0.0
+      MCP_AUTO_OPEN_ENABLED: false
+      DANGEROUSLY_OMIT_AUTH: true
 ...

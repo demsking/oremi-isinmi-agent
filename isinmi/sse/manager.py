@@ -19,7 +19,7 @@ from dataclasses import field
 from typing import Any
 from uuid import uuid4
 
-from ..core.models import clean_tags
+from isinmi.core.models import clean_tags
 
 
 @dataclass

@@ -12,13 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import sys
-import tomllib
-
-with open("pyproject.toml", "rb") as file:
-  value = tomllib.load(file)["project"][sys.argv[1]]
-
-if isinstance(value, list):
-  value = ", ".join(value)
-
-print(value)
+"""Agent tests."""

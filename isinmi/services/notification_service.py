@@ -18,10 +18,10 @@ from typing import Literal
 
 from fastapi import HTTPException
 
-from ..core.models import clean_tags
-from ..core.models import Notification
-from ..repositories.notification_repository import NotificationRepository
-from ..sse.manager import SSEManager
+from isinmi.core.models import clean_tags
+from isinmi.core.models import Notification
+from isinmi.repositories.notification_repository import NotificationRepository
+from isinmi.sse.manager import SSEManager
 
 
 class NotificationService:

@@ -16,11 +16,12 @@ from logging.config import fileConfig
 
 from alembic import context
 
-from ..core.database import Database
-from ..core.orm import Base
-from ..core.settings import get_settings
+from isinmi.core.database import Database
+from isinmi.core.orm import Base
+from isinmi.core.settings import get_settings
 
 config = context.config
+
 if config.config_file_name is not None:
   fileConfig(config.config_file_name)
 
@@ -29,6 +30,7 @@ target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
   settings = get_settings()
+
   context.configure(
     url=settings.database_url,
     target_metadata=target_metadata,

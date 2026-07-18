@@ -19,11 +19,11 @@ from datetime import datetime
 
 from fastapi import HTTPException
 
-from ..core.models import Event
-from ..core.models import EventCreate
-from ..core.models import EventUpdate
-from ..repositories.event_repository import EventRepository
-from ..services.notification_service import NotificationService
+from isinmi.core.models import Event
+from isinmi.core.models import EventCreate
+from isinmi.core.models import EventUpdate
+from isinmi.repositories.event_repository import EventRepository
+from isinmi.services.notification_service import NotificationService
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,21 @@
+# Copyright 2026 Sébastien Demanou. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
 """CalDAV integration tests."""
-
 from datetime import datetime
 from pathlib import Path
+from typing import ClassVar
 
 from pydantic import SecretStr
 
@@ -22,23 +36,23 @@ class FakeResponse:
 
 
 class FakeClient:
-  calls: list[tuple[str, str, str | None]] = []
+  calls: ClassVar[list[tuple[str, str, str | None]]] = []
 
-  def __init__(self, *args, **kwargs) -> None:  # noqa: ANN002,ANN003
+  def __init__(self, *args, **kwargs) -> None:
     self.args = args
     self.kwargs = kwargs
 
   async def __aenter__(self):
     return self
 
-  async def __aexit__(self, exc_type, exc, tb):  # noqa: ANN001
+  async def __aexit__(self, exc_type, exc, tb):
     return None
 
-  async def put(self, url: str, content: bytes):  # noqa: ANN001
+  async def put(self, url: str, content: bytes):
     self.calls.append(("PUT", url, content.decode("utf-8")))
     return FakeResponse()
 
-  async def delete(self, url: str):  # noqa: ANN001
+  async def delete(self, url: str):
     self.calls.append(("DELETE", url, None))
     return FakeResponse(status_code=204)
 

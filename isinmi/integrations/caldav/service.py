@@ -21,14 +21,14 @@ from urllib.parse import quote
 
 import httpx
 
-from ...core.models import CalDAVAccount
-from ...core.models import CalDAVAccountCreate
-from ...core.models import CalDAVAccountUpdate
-from ...core.models import CalDAVSyncResult
-from ...core.models import Event
-from ...core.orm import CalDAVAccountORM
-from ...repositories.caldav_repository import CalDAVRepository
-from ...repositories.event_repository import EventRepository
+from isinmi.core.models import CalDAVAccount
+from isinmi.core.models import CalDAVAccountCreate
+from isinmi.core.models import CalDAVAccountUpdate
+from isinmi.core.models import CalDAVSyncResult
+from isinmi.core.models import Event
+from isinmi.core.orm import CalDAVAccountORM
+from isinmi.repositories.caldav_repository import CalDAVRepository
+from isinmi.repositories.event_repository import EventRepository
 
 logger = logging.getLogger(__name__)
 

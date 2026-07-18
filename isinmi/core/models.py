@@ -48,9 +48,7 @@ class StrictModel(BaseModel):
       if key in {"acknowledged", "read_status"} and isinstance(value, int):
         normalized[key] = bool(value)
 
-      if (key.endswith("_at") or key.endswith("_datetime") or key in {"datetime", "timestamp"}) and isinstance(
-        value, str
-      ):
+      if (key.endswith("_at") or key.endswith("_datetime") or key in {"datetime", "timestamp"}) and isinstance(value, str):
         normalized[key] = DateTime.fromisoformat(value)
 
     return normalized
@@ -85,8 +83,7 @@ class Reminder(StrictModel):
   tags: list[str] = Field(
     default_factory=list,
     description=(
-      "Client grouping and filtering tags for reminders, such as device identifiers, UUIDs, source labels, "
-      "or workflow names."
+      "Client grouping and filtering tags for reminders, such as device identifiers, UUIDs, source labels, or workflow names."
     ),
   )
   status: Literal["pending", "completed", "dismissed"] = Field(default="pending", description="Current status.")
@@ -107,8 +104,7 @@ class ReminderCreate(StrictModel):
   tags: list[str] = Field(
     default_factory=list,
     description=(
-      "Client grouping and filtering tags for reminders, such as device identifiers, UUIDs, source labels, "
-      "or workflow names."
+      "Client grouping and filtering tags for reminders, such as device identifiers, UUIDs, source labels, or workflow names."
     ),
   )
 
@@ -149,8 +145,7 @@ class Event(StrictModel):
   tags: list[str] = Field(
     default_factory=list,
     description=(
-      "Client grouping and filtering tags for events, such as device identifiers, UUIDs, source labels, "
-      "or workflow names."
+      "Client grouping and filtering tags for events, such as device identifiers, UUIDs, source labels, or workflow names."
     ),
   )
   reminders: list[int] = Field(default_factory=lambda: [15, 30, 60], description="Reminder offsets in minutes.")
@@ -182,8 +177,7 @@ class EventCreate(StrictModel):
   tags: list[str] = Field(
     default_factory=list,
     description=(
-      "Client grouping and filtering tags for events, such as device identifiers, UUIDs, source labels, "
-      "or workflow names."
+      "Client grouping and filtering tags for events, such as device identifiers, UUIDs, source labels, or workflow names."
     ),
   )
   reminders: list[int] = Field(default_factory=lambda: [15, 30, 60], description="Reminder offsets in minutes.")
@@ -305,8 +299,7 @@ class CalDAVAccount(StrictModel):
   tags: list[str] = Field(
     default_factory=list,
     description=(
-      "Client grouping and filtering tags used to decide which events are synchronized "
-      "through this CalDAV account."
+      "Client grouping and filtering tags used to decide which events are synchronized through this CalDAV account."
     ),
   )
   is_active: bool = Field(default=True, description="Whether the CalDAV account is currently active.")
@@ -331,8 +324,7 @@ class CalDAVAccountCreate(StrictModel):
   tags: list[str] = Field(
     default_factory=list,
     description=(
-      "Client grouping and filtering tags used to decide which events are synchronized "
-      "through this CalDAV account."
+      "Client grouping and filtering tags used to decide which events are synchronized through this CalDAV account."
     ),
   )
   is_active: bool = Field(default=True, description="Whether the CalDAV account is currently active.")
@@ -357,8 +349,7 @@ class CalDAVAccountUpdate(StrictModel):
   tags: list[str] | None = Field(
     None,
     description=(
-      "Updated client grouping and filtering tags used to decide which events are synchronized "
-      "through this CalDAV account."
+      "Updated client grouping and filtering tags used to decide which events are synchronized through this CalDAV account."
     ),
   )
   is_active: bool | None = Field(None, description="Updated account activation state.")

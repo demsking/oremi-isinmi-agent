@@ -19,30 +19,33 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.responses import JSONResponse
-from fastapi_mcp import FastApiMCP
+from mcp.server.fastmcp import FastMCP
 
-from ..api import caldav
-from ..api import docs
-from ..api import events
-from ..api import health
-from ..api import notifications
-from ..api import reminders
-from ..integrations.caldav.service import CalDAVSyncService
-from ..repositories.caldav_repository import CalDAVRepository
-from ..repositories.event_repository import EventRepository
-from ..repositories.notification_repository import NotificationRepository
-from ..repositories.reminder_repository import ReminderRepository
-from ..services.event_service import EventService
-from ..services.notification_service import NotificationService
-from ..services.reminder_service import ReminderService
-from ..sse.manager import SSEManager
-from ..utils.logger import configure_logging
-from .database import Database
-from .package import APP_DESCRIPTION
-from .package import APP_NAME
-from .package import APP_VERSION
-from .settings import get_settings
-from .settings import Settings
+from isinmi.api import caldav
+from isinmi.api import docs
+from isinmi.api import events
+from isinmi.api import health
+from isinmi.api import notifications
+from isinmi.api import reminders
+from isinmi.core.database import Database
+from isinmi.core.package import APP_DOCUMENTATION_URL
+from isinmi.core.package import APP_NAME
+from isinmi.core.package import APP_VERSION
+from isinmi.core.settings import get_settings
+from isinmi.core.settings import Settings
+from isinmi.integrations.caldav.service import CalDAVSyncService
+from isinmi.mcp.prompts import register_mcp_prompts
+from isinmi.mcp.resources import register_mcp_resources
+from isinmi.mcp.tools import register_mcp_tools
+from isinmi.repositories.caldav_repository import CalDAVRepository
+from isinmi.repositories.event_repository import EventRepository
+from isinmi.repositories.notification_repository import NotificationRepository
+from isinmi.repositories.reminder_repository import ReminderRepository
+from isinmi.services.event_service import EventService
+from isinmi.services.notification_service import NotificationService
+from isinmi.services.reminder_service import ReminderService
+from isinmi.sse.manager import SSEManager
+from isinmi.utils.logger import configure_logging
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +80,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     caldav_repository = CalDAVRepository(db)
 
     app.state.settings = resolved_settings
+    app.state.mcp = mcp
     app.state.db = db
     app.state.sse_manager = sse
     app.state.notification_service = notification_service
@@ -91,7 +95,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.event_service.set_caldav_sync_service(app.state.caldav_service)
 
     try:
-      yield
+      async with mcp.session_manager.run():
+        yield
     finally:
       await db.dispose()
 
@@ -118,6 +123,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     ],
   )
 
+  mcp = FastMCP(
+    name="Oremi Isinmi",
+    instructions=(
+      "Expose AI-agent facing tools, resources, and prompts for reminders, events, notifications and calendar synchronization."
+    ),
+    stateless_http=True,
+    json_response=True,
+    streamable_http_path="/",
+    website_url=APP_DOCUMENTATION_URL,
+  )
+
   @app.exception_handler(Exception)
   async def unhandled_exception_handler(_, exc: Exception) -> JSONResponse:
     logger.exception("Unhandled application error")
@@ -126,6 +142,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
   @app.get("/", include_in_schema=False)
   async def redirect_to_docs():
     return HTMLResponse(status_code=307, headers={"Location": docs.router.prefix})
+
+  app.state.mcp = mcp
 
   prefix = "" if resolved_settings.api_prefix == "/" else resolved_settings.api_prefix
   api_prefix = f"{prefix}/api"
@@ -137,21 +155,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
   app.include_router(health.router, prefix=prefix)
   app.include_router(docs.router, prefix=prefix)
 
-  mcp = FastApiMCP(
-    app,
-    name=APP_NAME,
-    description=APP_DESCRIPTION,
-    describe_all_responses=True,
-    describe_full_response_schema=True,
-    include_tags=[
-      reminders.API_TAG_METADATA["name"],
-      events.API_TAG_METADATA["name"],
-      notifications.API_TAG_METADATA["name"],
-    ],
-    exclude_operations=events.MCP_EXCLUDED_OPERATIONS,
-  )
+  app.mount(f"{prefix}/mcp", mcp.streamable_http_app(), name="mcp")
 
-  mcp.mount_http()
-  app.state.mcp = mcp
+  register_mcp_tools(mcp, app)
+  register_mcp_resources(mcp, app)
+  register_mcp_prompts(mcp)
 
   return app

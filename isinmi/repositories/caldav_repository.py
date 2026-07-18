@@ -18,14 +18,14 @@ from datetime import datetime
 
 from sqlalchemy import select
 
-from ..core.database import Database
-from ..core.models import CalDAVAccount
-from ..core.models import CalDAVAccountCreate
-from ..core.models import CalDAVAccountUpdate
-from ..core.models import CalDAVSyncResult
-from ..core.models import new_id
-from ..core.orm import CalDAVAccountORM
-from ..core.orm import CalDAVEventLinkORM
+from isinmi.core.database import Database
+from isinmi.core.models import CalDAVAccount
+from isinmi.core.models import CalDAVAccountCreate
+from isinmi.core.models import CalDAVAccountUpdate
+from isinmi.core.models import CalDAVSyncResult
+from isinmi.core.models import new_id
+from isinmi.core.orm import CalDAVAccountORM
+from isinmi.core.orm import CalDAVEventLinkORM
 
 
 class CalDAVRepository:

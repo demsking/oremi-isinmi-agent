@@ -31,8 +31,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import sessionmaker
 
-from .orm import Base
-from .settings import Settings
+from isinmi.core.orm import Base
+from isinmi.core.settings import Settings
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T")

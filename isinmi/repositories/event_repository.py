@@ -18,10 +18,10 @@ from datetime import datetime
 
 from sqlalchemy import select
 
-from ..core.database import Database
-from ..core.models import Event
-from ..core.orm import EventORM
-from ..repositories.base import build_tags_filter
+from isinmi.core.database import Database
+from isinmi.core.models import Event
+from isinmi.core.orm import EventORM
+from isinmi.core.repository import build_tags_filter
 
 
 class EventRepository:
@@ -80,7 +80,7 @@ class EventRepository:
       if end is not None:
         stmt = stmt.where(EventORM.start_datetime <= end)
 
-      tag_filter = build_tags_filter(EventORM.tags, tags or [], session.bind.dialect.name)
+      tag_filter = build_tags_filter(EventORM.tags, tags or [], session.bind.dialect.name)  # pyright: ignore
       if tag_filter is not None:
         stmt = stmt.where(tag_filter)
 

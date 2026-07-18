@@ -1,8 +1,8 @@
-**Oremi Isinmi** is a lightweight, AI-powered personal assistant designed
-to help you manage your reminders and events effortlessly. As a core
-subsystem of the Oremi personal assistant ecosystem, it combines natural
-language interaction with structured data management to provide intelligent,
-privacy-first time management.
+**Oremi Isinmi** is the reminders, scheduling, tagging, and notification
+subsystem of the Oremi personal assistant ecosystem. It provides a REST API
+and MCP interface that help AI assistants and autonomous agents manage
+reminders, schedules, tags, and notifications through a secure and intelligent
+platform.
 
 Project repository: https://gitlab.com/demsking/oremi-isinmi
 
@@ -69,9 +69,9 @@ group the conversation itself and any reminder created from it.
 The [`demsking/oremi-isinmi`](https://hub.docker.com/r/demsking/oremi-isinmi)
 Docker image is officially available on Docker Hub, supporting both
 `linux/amd64` and `linux/arm64` platforms. The image is configured to expose
-port `7337`, which serves the API and documentation endpoints.
+port `5073`, which serves the API and documentation endpoints.
 
-The local documentation can be accessed at `http://localhost:7337/docs` for easy
+The local documentation can be accessed at `http://localhost:5073/docs` for easy
 reference on available endpoints and usage instructions.
 
 ### Volumes
@@ -94,7 +94,7 @@ to run Oremi Isinmi:
 docker run -d \
   --env-file <path_to_env_file> \
   -v ~/.config/oremi-isinmi:/oremi/data \
-  -p 7337:7337 \
+  -p 5073:5073 \
   demsking/oremi-isinmi
 ```
 
@@ -112,7 +112,7 @@ services:
     image: demsking/oremi-isinmi
     restart: unless-stopped
     ports:
-      - 7337:7337
+      - 5073:5073
     volumes:
       - ~/.config/oremi-isinmi:/oremi/data
     environment:
@@ -138,9 +138,9 @@ the environment or a `.env` file in the working directory.
 
 #### Application and Server Settings
 
-- `OREMI_ISINMI_SERVER_HOST`: Optional. Defaults to `127.0.0.1`. Host interface used by
+- `OREMI_ISINMI_SERVER_HOST`: Optional. Defaults to `0.0.0.0`. Host interface used by
   the Oremi Isinmi server.
-- `OREMI_ISINMI_SERVER_PORT`: Optional. Defaults to `7337`. Port used by the
+- `OREMI_ISINMI_SERVER_PORT`: Optional. Defaults to `5073`. Port used by the
   Oremi Isinmi server.
 - `OREMI_ISINMI_API_PREFIX`: Optional. Defaults to `/`. Prefix for all API
   routes. Must start with `/`.
@@ -187,7 +187,7 @@ and store it in your `.env` file without extra spaces or quotes.
 ```env
 OREMI_ISINMI_API_PREFIX=/
 OREMI_ISINMI_SERVER_HOST=0.0.0.0
-OREMI_ISINMI_SERVER_PORT=7337
+OREMI_ISINMI_SERVER_PORT=5073
 OREMI_ISINMI_DATABASE_URL=sqlite:///oremi/data/oremi_isinmi.db
 OREMI_ISINMI_DATABASE_ENCRYPTION_KEY=replace-this-with-at-least-32-characters
 OREMI_ISINMI_LOG_LEVEL=INFO
@@ -248,30 +248,60 @@ Operational notes:
 
 ### MCP Integration
 
-Oremi Isinmi exposes a Model Context Protocol server.
+Oremi Isinmi exposes a Model Context Protocol (MCP) server over HTTP, built on Python's official `mcp` SDK using the `FastMCP` framework.
 
-The MCP HTTP transport is mounted at:
+The MCP HTTP transport endpoint is mounted at:
 
-- `GET /mcp`
-- `POST /mcp`
-- `DELETE /mcp`
+- `POST /mcp` (Server-Sent Events connection negotiation and request/response transport)
 
-The MCP tool catalog is generated from the Oremi Isinmi API routes that belong
-to these tags:
+#### MCP Tools
 
-- `Reminders Endpoints`
-- `Events Endpoints`
-- `Notifications Endpoints`
+The server provides a rich catalog of strongly-typed tools representing scheduling, reminders, notifications, and synchronization operations:
 
-The following tags are intentionally excluded from MCP tools:
+##### Reminder Management
 
-- `Agent Endpoints`
-- `Server Endpoints`
+- `create_reminder`: Schedule a new encrypted reminder with natural language-oriented metadata and tags.
+- `list_reminders`: Retrieve reminders matching filters (status, tags, datetime range, upcoming).
+- `update_reminder`: Update fields of an existing reminder.
+- `complete_reminder`: Mark a reminder as completed.
+- `delete_reminder`: Permanently remove a reminder.
 
-The MCP server is configured in HTTP mode and reuses the Oremi Isinmi app's
-OpenAPI schema, so tool descriptions stay in sync with the public API. Response
-schemas are described in full for better client generation and assistant
-planning.
+##### Calendar Event Management
+
+- `create_event`: Book a calendar event and generate corresponding notifications.
+- `get_event`: Fetch details of a single event by ID.
+- `list_events`: List calendar events matching tags, status, or date range.
+- `update_event`: Modify properties of a booked event.
+- `delete_event`: Cancel and delete a calendar event.
+
+##### Notifications and Alerts
+
+- `list_notifications`: Retrieve read/unread notification logs.
+- `get_unread_count`: Query the count of unread alerts.
+- `mark_notification_read`: Mark a specific notification as read.
+- `mark_all_notifications_read`: Bulk mark notifications as read.
+
+##### CalDAV Accounts Sync
+
+- `create_caldav_account`: Register or update CalDAV credentials and endpoint configurations.
+- `list_caldav_accounts`: Retrieve registered CalDAV accounts.
+- `delete_caldav_account`: Remove a CalDAV account profile.
+
+#### MCP Resources
+
+AI agents can directly inspect the state of resources using URI-based resource paths. The resource payloads are returned as raw JSON:
+
+- `reminders:///{reminder_id}`: Retrieves detailed state of a specific reminder.
+- `events:///{event_id}`: Retrieves detailed state of a specific calendar event.
+- `notifications:///{notification_id}`: Retrieves detailed state of a specific notification.
+
+#### MCP Prompts
+
+The server publishes high-level prompt templates to guide AI agents in multi-step workflows:
+
+- `schedule_day_plan`: Helps the agent organize tasks and appointments for a specific day.
+- `create_event_draft`: Guides the user/agent through gathering necessary details to draft and book calendar events.
+- `manage_unread_alerts`: Facilitates reading, acknowledging, and completing tasks associated with outstanding notifications.
 
 ## Contributing
 

@@ -33,6 +33,7 @@ with _pyproject_path.open("rb") as file:
   APP_NAME = package["name"]
   APP_DESCRIPTION = package["description"]
   APP_VERSION = package["version"]
+  APP_DOCUMENTATION_URL = package["urls"]["Documentation"]
 
   del package
   del tomllib

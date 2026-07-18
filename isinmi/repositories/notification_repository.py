@@ -20,10 +20,10 @@ from typing import Literal
 from sqlalchemy import func
 from sqlalchemy import select
 
-from ..core.database import Database
-from ..core.models import Notification
-from ..core.orm import NotificationORM
-from ..repositories.base import build_tags_filter
+from isinmi.core.database import Database
+from isinmi.core.models import Notification
+from isinmi.core.orm import NotificationORM
+from isinmi.core.repository import build_tags_filter
 
 
 class NotificationRepository:
@@ -68,7 +68,7 @@ class NotificationRepository:
       if read_status is not None:
         stmt = stmt.where(NotificationORM.read_status == read_status)
 
-      tag_filter = build_tags_filter(NotificationORM.tags, tags or [], session.bind.dialect.name)
+      tag_filter = build_tags_filter(NotificationORM.tags, tags or [], session.bind.dialect.name)  # pyright: ignore
       if tag_filter is not None:
         stmt = stmt.where(tag_filter)
 
@@ -80,7 +80,7 @@ class NotificationRepository:
 
   async def unread_count(self) -> int:
     def _operation(session):
-      stmt = select(func.count()).select_from(NotificationORM).where(NotificationORM.read_status.is_(False))
+      stmt = select(func.count()).select_from(NotificationORM).where(NotificationORM.read_status.is_(False))  # pylint: disable=not-callable
       return int(session.scalar(stmt) or 0)
 
     return await self.db.run(_operation)
@@ -114,7 +114,7 @@ class NotificationRepository:
   async def mark_all_read_by_tags(self, tags: list[str]) -> int:
     def _operation(session):
       stmt = select(NotificationORM).where(NotificationORM.read_status.is_(False))
-      tag_filter = build_tags_filter(NotificationORM.tags, tags, session.bind.dialect.name)
+      tag_filter = build_tags_filter(NotificationORM.tags, tags, session.bind.dialect.name)  # pyright: ignore
 
       if tag_filter is not None:
         stmt = stmt.where(tag_filter)

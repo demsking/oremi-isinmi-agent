@@ -16,8 +16,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from pydantic import Field
 
-from ..core.package import APP_NAME
-from ..core.package import APP_VERSION
+from isinmi.core.package import APP_NAME
+from isinmi.core.package import APP_VERSION
 
 API_TAG_METADATA = {
   "name": "Server Endpoints",

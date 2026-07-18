@@ -11,8 +11,6 @@ __pycache__/
 .ruff_cache/
 htmlcov/
 .coverage
-data/*
-!data/.gitkeep
-logs/*
-!logs/.gitkeep
+data/
+logs/
 build/

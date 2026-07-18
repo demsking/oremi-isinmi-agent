@@ -23,7 +23,7 @@ from sqlalchemy import Select
 from sqlalchemy import select
 from sqlalchemy.sql.elements import ColumnElement
 
-from ..core.models import clean_tags
+from isinmi.core.models import clean_tags
 
 
 def build_tags_filter(

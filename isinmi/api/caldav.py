@@ -22,11 +22,11 @@ from fastapi import Query
 from fastapi import Request
 from fastapi.openapi.models import Example
 
-from ..core.models import CalDAVAccount
-from ..core.models import CalDAVAccountCreate
-from ..core.models import CalDAVAccountUpdate
-from ..core.models import CalDAVSyncResult
-from ..utils.validators import parse_tags_query
+from isinmi.core.models import CalDAVAccount
+from isinmi.core.models import CalDAVAccountCreate
+from isinmi.core.models import CalDAVAccountUpdate
+from isinmi.core.models import CalDAVSyncResult
+from isinmi.utils.validators import parse_tags_query
 
 API_TAG_METADATA = {
   "name": "CalDAV Endpoints",

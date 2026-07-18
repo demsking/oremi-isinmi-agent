@@ -18,10 +18,10 @@ from datetime import datetime
 
 from sqlalchemy import select
 
-from ..core.database import Database
-from ..core.models import Reminder
-from ..core.orm import ReminderORM
-from ..repositories.base import build_tags_filter
+from isinmi.core.database import Database
+from isinmi.core.models import Reminder
+from isinmi.core.orm import ReminderORM
+from isinmi.core.repository import build_tags_filter
 
 
 class ReminderRepository:
@@ -78,7 +78,7 @@ class ReminderRepository:
       if end is not None:
         stmt = stmt.where(ReminderORM.datetime <= end)
 
-      tag_filter = build_tags_filter(ReminderORM.tags, tags or [], session.bind.dialect.name)
+      tag_filter = build_tags_filter(ReminderORM.tags, tags or [], session.bind.dialect.name)  # pyright: ignore
       if tag_filter is not None:
         stmt = stmt.where(tag_filter)
 
