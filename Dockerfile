@@ -48,6 +48,6 @@ USER oremi
 
 VOLUME /oremi/data
 
-EXPOSE 7337
+EXPOSE 5073
 
 CMD ["python", "/oremi/isinmi"]

@@ -114,11 +114,14 @@ services:
     ports:
       - 5073:5073
     volumes:
-      - ~/.config/oremi-isinmi:/oremi/data
+      - oremi-isinmi-data:/oremi/data
     environment:
       OREMI_ISINMI_DATABASE_ENCRYPTION_KEY: ${OREMI_ISINMI_DATABASE_ENCRYPTION_KEY?Missing required environment variable}
     env_file:
       - .env
+
+volumes:
+  oremi-isinmi-data:
 ```
 
 Run the container using `docker compose`:
@@ -246,19 +249,19 @@ Operational notes:
 - The current implementation is best-effort and logs remote sync errors without
   breaking the local event workflow
 
-### MCP Integration
+## MCP Integration
 
 Oremi Isinmi exposes a Model Context Protocol (MCP) server over HTTP, built on Python's official `mcp` SDK using the `FastMCP` framework.
 
 The MCP HTTP transport endpoint is mounted at:
 
-- `POST /mcp` (Server-Sent Events connection negotiation and request/response transport)
+- `POST /mcp/` (Server-Sent Events connection negotiation and request/response transport)
 
-#### MCP Tools
+### MCP Tools
 
 The server provides a rich catalog of strongly-typed tools representing scheduling, reminders, notifications, and synchronization operations:
 
-##### Reminder Management
+#### Reminder Management
 
 - `create_reminder`: Schedule a new encrypted reminder with natural language-oriented metadata and tags.
 - `list_reminders`: Retrieve reminders matching filters (status, tags, datetime range, upcoming).
@@ -266,7 +269,7 @@ The server provides a rich catalog of strongly-typed tools representing scheduli
 - `complete_reminder`: Mark a reminder as completed.
 - `delete_reminder`: Permanently remove a reminder.
 
-##### Calendar Event Management
+#### Calendar Event Management
 
 - `create_event`: Book a calendar event and generate corresponding notifications.
 - `get_event`: Fetch details of a single event by ID.
@@ -274,20 +277,20 @@ The server provides a rich catalog of strongly-typed tools representing scheduli
 - `update_event`: Modify properties of a booked event.
 - `delete_event`: Cancel and delete a calendar event.
 
-##### Notifications and Alerts
+#### Notifications and Alerts
 
 - `list_notifications`: Retrieve read/unread notification logs.
 - `get_unread_count`: Query the count of unread alerts.
 - `mark_notification_read`: Mark a specific notification as read.
 - `mark_all_notifications_read`: Bulk mark notifications as read.
 
-##### CalDAV Accounts Sync
+#### CalDAV Accounts Sync
 
 - `create_caldav_account`: Register or update CalDAV credentials and endpoint configurations.
 - `list_caldav_accounts`: Retrieve registered CalDAV accounts.
 - `delete_caldav_account`: Remove a CalDAV account profile.
 
-#### MCP Resources
+### MCP Resources
 
 AI agents can directly inspect the state of resources using URI-based resource paths. The resource payloads are returned as raw JSON:
 
@@ -295,7 +298,7 @@ AI agents can directly inspect the state of resources using URI-based resource p
 - `events:///{event_id}`: Retrieves detailed state of a specific calendar event.
 - `notifications:///{notification_id}`: Retrieves detailed state of a specific notification.
 
-#### MCP Prompts
+### MCP Prompts
 
 The server publishes high-level prompt templates to guide AI agents in multi-step workflows:
 
@@ -315,12 +318,12 @@ tests, code style guidelines, and the pull request process, please refer to
 
 ## Versioning
 
-Oremi Device project adheres to [Semantic Versioning](https://semver.org/)
-(SemVer). Version numbers follow the `MAJOR.MINOR.PATCH` format:
+Oremi Ojọ follows [Semantic Versioning](https://semver.org/). Display the
+installed version with:
 
-- **MAJOR** version increments for incompatible API changes
-- **MINOR** version increments for backward-compatible new functionality
-- **PATCH** version increments for backward-compatible bug fixes
+```bash
+oremi-isinmi --version
+```
 
 ## License
 

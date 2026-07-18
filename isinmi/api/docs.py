@@ -61,7 +61,7 @@ async def html_documentation():
           const isGitlabPage = location.origin.includes('gitlab.io');
 
           openapi.info.title = 'Oremi Isinmi Documentation';
-          openapi.info.description = "{SERVICE_DESCRIPTION}";
+          openapi.info.description = `{SERVICE_DESCRIPTION}`;
 
           if (isGitlabPage) {{
             openapi.servers = [];
@@ -75,7 +75,7 @@ async def html_documentation():
             content: openapi,
             hideClientButton: true,
             hideTestRequestButton: isGitlabPage,
-            expandAllModelSections: true,
+            expandAllModelSections: false,
             showSidebar: true,
             showDeveloperTools: 'localhost',
             operationTitleSource: 'summary',

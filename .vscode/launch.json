@@ -14,7 +14,7 @@
         "--host",
         "0.0.0.0",
         "--port",
-        "7337"
+        "5073"
       ],
       "cwd": "${workspaceFolder}",
       "envFile": "${workspaceFolder}/.env.example",
