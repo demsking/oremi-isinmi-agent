@@ -312,3 +312,143 @@ async def test_mcp_resources() -> None:
     data = response.json()
     # It should return a JSON-RPC error since ToolError/Exception is raised in the resource handler
     assert "error" in data or "result" not in data
+
+
+@pytest.mark.asyncio
+async def test_additional_mcp_prompts() -> None:
+  app = create_app()
+
+  with TestClient(app, backend="asyncio") as client:
+    # 1. List prompts and verify all new prompts exist
+    payload = {"jsonrpc": "2.0", "id": 1, "method": "prompts/list", "params": {}}
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    prompts = data["result"]["prompts"]
+    prompt_names = [p["name"] for p in prompts]
+
+    expected_prompts = [
+      "set_reminder",
+      "list_reminders",
+      "find_reminder",
+      "update_reminder",
+      "complete_reminder",
+      "postpone_reminder",
+      "delete_reminder",
+      "schedule_event",
+      "list_events",
+      "find_event",
+      "update_event",
+      "cancel_event",
+      "find_free_time",
+      "daily_agenda",
+      "weekly_agenda",
+      "schedule_recurring_reminder",
+      "reminder_suggestions",
+      "morning_briefing",
+    ]
+
+    for name in expected_prompts:
+      assert name in prompt_names
+
+    # 2. Test set_reminder
+    payload = {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "method": "prompts/get",
+      "params": {
+        "name": "set_reminder",
+        "arguments": {
+          "title": "Buy groceries",
+          "datetime": "2026-07-19T18:00:00",
+          "description": "Get milk and bread",
+          "recurring": "none",
+          "tags": "shopping,home",
+        },
+      },
+    }
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    content_text = data["result"]["messages"][0]["content"]["text"]
+    assert "Buy groceries" in content_text
+    assert "2026-07-19T18:00:00" in content_text
+    assert "Get milk and bread" in content_text
+
+    # 3. Test list_reminders
+    payload = {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "method": "prompts/get",
+      "params": {
+        "name": "list_reminders",
+        "arguments": {
+          "status": "pending",
+        },
+      },
+    }
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    content_text = data["result"]["messages"][0]["content"]["text"]
+    assert "Here are the current matching reminders" in content_text
+
+    # 4. Test find_free_time
+    payload = {
+      "jsonrpc": "2.0",
+      "id": 4,
+      "method": "prompts/get",
+      "params": {
+        "name": "find_free_time",
+        "arguments": {
+          "date": "2026-07-19",
+        },
+      },
+    }
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    content_text = data["result"]["messages"][0]["content"]["text"]
+    assert "Free time slots on 2026-07-19" in content_text
+
+    # 5. Test reminder_suggestions
+    payload = {
+      "jsonrpc": "2.0",
+      "id": 5,
+      "method": "prompts/get",
+      "params": {
+        "name": "reminder_suggestions",
+        "arguments": {
+          "context": "health",
+        },
+      },
+    }
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    content_text = data["result"]["messages"][0]["content"]["text"]
+    assert "Suggestions for health" in content_text
+
+    # 6. Test morning_briefing
+    payload = {
+      "jsonrpc": "2.0",
+      "id": 6,
+      "method": "prompts/get",
+      "params": {
+        "name": "morning_briefing",
+        "arguments": {
+          "date": "2026-07-19",
+        },
+      },
+    }
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    content_text = data["result"]["messages"][0]["content"]["text"]
+    assert "briefing for 2026-07-19" in content_text

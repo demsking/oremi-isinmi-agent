@@ -249,15 +249,19 @@ Operational notes:
 - The current implementation is best-effort and logs remote sync errors without
   breaking the local event workflow
 
-## MCP Integration
+## Model Context Protocol
 
-Oremi Isinmi exposes a Model Context Protocol (MCP) server over HTTP, built on Python's official `mcp` SDK using the `FastMCP` framework.
+Oremi Isinmi implements the Model Context Protocol (MCP) using a strongly-typed
+server. It exposes its core functionality as a set of tools, resources and
+prompts that LLM agents can call directly.
 
-The MCP HTTP transport endpoint is mounted at:
+The MCP server uses the **Streamable HTTP transport** protocol and is mounted at:
 
-- `POST /mcp/` (Server-Sent Events connection negotiation and request/response transport)
+```txt
+/mcp
+```
 
-### MCP Tools
+### Available MCP Tools
 
 The server provides a rich catalog of strongly-typed tools representing scheduling, reminders, notifications, and synchronization operations:
 
@@ -286,11 +290,11 @@ The server provides a rich catalog of strongly-typed tools representing scheduli
 
 #### CalDAV Accounts Sync
 
-- `create_caldav_account`: Register or update CalDAV credentials and endpoint configurations.
 - `list_caldav_accounts`: Retrieve registered CalDAV accounts.
-- `delete_caldav_account`: Remove a CalDAV account profile.
+- `sync_event_to_caldav`: Synchronize a local event with configured CalDAV accounts.
+- `sync_all_events_to_caldav`: Synchronize multiple local events with CalDAV, optionally filtered by tags.
 
-### MCP Resources
+### Available MCP Resources
 
 AI agents can directly inspect the state of resources using URI-based resource paths. The resource payloads are returned as raw JSON:
 
@@ -298,13 +302,31 @@ AI agents can directly inspect the state of resources using URI-based resource p
 - `events:///{event_id}`: Retrieves detailed state of a specific calendar event.
 - `notifications:///{notification_id}`: Retrieves detailed state of a specific notification.
 
-### MCP Prompts
+### Available MCP Prompts
 
 The server publishes high-level prompt templates to guide AI agents in multi-step workflows:
 
 - `schedule_day_plan`: Helps the agent organize tasks and appointments for a specific day.
-- `create_event_draft`: Guides the user/agent through gathering necessary details to draft and book calendar events.
-- `manage_unread_alerts`: Facilitates reading, acknowledging, and completing tasks associated with outstanding notifications.
+- `create_event_draft`: Guides the user/agent through gathering details to draft calendar events.
+- `manage_unread_alerts`: Facilitates processing unread alerts.
+- `set_reminder`: Guides drafting and creating a reminder.
+- `list_reminders`: Fetches and lists existing reminders from the database.
+- `find_reminder`: Text search over reminder titles and descriptions.
+- `update_reminder`: Details proposed reminder changes.
+- `complete_reminder`: Confirms completing a reminder.
+- `postpone_reminder`: Guides delaying a reminder to a new datetime.
+- `delete_reminder`: Requests confirmation to delete a reminder.
+- `schedule_event`: Prepares and drafts a new calendar event.
+- `list_events`: Lists calendar events matching criteria.
+- `find_event`: Text search over calendar events.
+- `update_event`: Details proposed event changes.
+- `cancel_event`: Instructs cancelling an event.
+- `find_free_time`: Analyzes busy blocks and suggests open slots.
+- `daily_agenda`: Chronological timeline for a single day.
+- `weekly_agenda`: Week-at-a-glance agenda starting from a given date.
+- `schedule_recurring_reminder`: Configures recurring reminders.
+- `reminder_suggestions`: Contextual reminder templates.
+- `morning_briefing`: Daily overview of agenda, active reminders, and overdue items.
 
 ## Contributing
 

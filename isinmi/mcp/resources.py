@@ -24,27 +24,39 @@ from isinmi.core.models import Reminder
 def register_mcp_resources(mcp: FastMCP, app: FastAPI) -> None:
   """Register MCP resources for accessing reminder, event, and notification data directly."""
 
-  @mcp.resource("reminders:///{reminder_id}", mime_type="application/json")
+  @mcp.resource(
+    "reminders:///{reminder_id}",
+    mime_type="application/json",
+    title="Reminder Details",
+    description="Retrieve detailed information about a specific reminder by ID."
+  )
   async def get_reminder_resource(reminder_id: str) -> Reminder:
-    """Retrieve detailed information about a specific reminder by ID."""
     service = app.state.reminder_service
     try:
       return await service.get(reminder_id)
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.resource("events:///{event_id}", mime_type="application/json")
+  @mcp.resource(
+    "events:///{event_id}",
+    mime_type="application/json",
+    title="Event Details",
+    description="Retrieve detailed information about a specific calendar event by ID."
+  )
   async def get_event_resource(event_id: str) -> Event:
-    """Retrieve detailed information about a specific calendar event by ID."""
     service = app.state.event_service
     try:
       return await service.get(event_id)
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.resource("notifications:///{notification_id}", mime_type="application/json")
+  @mcp.resource(
+    "notifications:///{notification_id}",
+    mime_type="application/json",
+    title="Notification Details",
+    description="Retrieve detailed information about a specific notification by ID."
+  )
   async def get_notification_resource(notification_id: str) -> Notification:
-    """Retrieve detailed information about a specific notification by ID."""
     service = app.state.notification_service
     try:
       # Helper operation to load notification from SQLite

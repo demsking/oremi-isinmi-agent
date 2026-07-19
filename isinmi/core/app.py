@@ -156,6 +156,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
   register_mcp_tools(mcp, app)
   register_mcp_resources(mcp, app)
-  register_mcp_prompts(mcp)
+  register_mcp_prompts(mcp, app)
 
   return app

@@ -39,7 +39,10 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
 
   # --- Reminders Tools ---
 
-  @mcp.tool()
+  @mcp.tool(
+    title="Create Reminder",
+    description="Create a new reminder."
+  )
   async def create_reminder(
     title: str,
     datetime: DateTime,
@@ -47,15 +50,6 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     recurring: Literal["none", "daily", "weekly", "monthly"] = "none",
     tags: list[str] | None = None,
   ) -> Reminder:
-    """Create a new reminder.
-
-    Args:
-      title: The title of the reminder.
-      datetime: The date and time when the reminder should trigger.
-      description: Optional details about the reminder.
-      recurring: Reoccurrence frequency: 'none', 'daily', 'weekly', or 'monthly'.
-      tags: Optional list of tags for grouping/filtering.
-    """
     service = app.state.reminder_service
     payload = ReminderCreate(
       title=title,
@@ -69,7 +63,11 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool(annotations=READ_ONLY)
+  @mcp.tool(
+    annotations=READ_ONLY,
+    title="List Reminders",
+    description="List reminders with optional filters."
+  )
   async def list_reminders(
     status: Literal["pending", "completed", "dismissed"] | None = None,
     start: DateTime | None = None,
@@ -79,17 +77,6 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     limit: int = 100,
     offset: int = 0,
   ) -> list[Reminder]:
-    """List reminders with optional filters.
-
-    Args:
-      status: Filter by status ('pending', 'completed', 'dismissed').
-      start: Only reminders triggering at or after this date/time.
-      end: Only reminders triggering at or before this date/time.
-      tags: Filter by tags (all tags must match).
-      upcoming: If true, lists pending reminders for the next 24 hours.
-      limit: Maximum number of reminders to return.
-      offset: Number of reminders to skip.
-    """
     service = app.state.reminder_service
     try:
       return await service.list(
@@ -104,7 +91,10 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool()
+  @mcp.tool(
+    title="Update Reminder",
+    description="Update an existing reminder."
+  )
   async def update_reminder(
     reminder_id: str,
     title: str | None = None,
@@ -114,17 +104,6 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     tags: list[str] | None = None,
     status: Literal["pending", "completed", "dismissed"] | None = None,
   ) -> Reminder:
-    """Update an existing reminder.
-
-    Args:
-      reminder_id: ID of the reminder to update.
-      title: New title.
-      description: New description.
-      datetime: New trigger time.
-      recurring: New recurrence frequency.
-      tags: New tag list.
-      status: New status.
-    """
     service = app.state.reminder_service
     update_data = {}
     if title is not None:
@@ -145,26 +124,22 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool()
+  @mcp.tool(
+    title="Complete Reminder",
+    description="Mark a reminder as completed."
+  )
   async def complete_reminder(reminder_id: str) -> Reminder:
-    """Mark a reminder as completed.
-
-    Args:
-      reminder_id: ID of the reminder to complete.
-    """
     service = app.state.reminder_service
     try:
       return await service.complete(reminder_id)
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool()
+  @mcp.tool(
+    title="Delete Reminder",
+    description="Delete a reminder."
+  )
   async def delete_reminder(reminder_id: str) -> dict[str, str]:
-    """Delete a reminder.
-
-    Args:
-      reminder_id: ID of the reminder to delete.
-    """
     service = app.state.reminder_service
     try:
       return await service.delete(reminder_id)
@@ -173,7 +148,10 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
 
   # --- Events Tools ---
 
-  @mcp.tool()
+  @mcp.tool(
+    title="Create Event",
+    description="Create a new calendar event."
+  )
   async def create_event(
     title: str,
     start_datetime: DateTime,
@@ -184,18 +162,6 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     tags: list[str] | None = None,
     reminders: list[int] | None = None,
   ) -> Event:
-    """Create a new calendar event.
-
-    Args:
-      title: Title of the event.
-      start_datetime: Start date and time.
-      end_datetime: End date and time.
-      description: Optional description.
-      location: Optional location.
-      attendees: Optional list of attendee names or emails.
-      tags: Optional tags for grouping.
-      reminders: Optional reminder offsets in minutes (e.g. [15, 30, 60]).
-    """
     service = app.state.event_service
     payload_args = {
       "title": title,
@@ -214,20 +180,23 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool(annotations=READ_ONLY)
+  @mcp.tool(
+    annotations=READ_ONLY,
+    title="Get Event",
+    description="Retrieve detailed information about a specific event."
+  )
   async def get_event(event_id: str) -> Event:
-    """Retrieve detailed information about a specific event.
-
-    Args:
-      event_id: ID of the event.
-    """
     service = app.state.event_service
     try:
       return await service.get(event_id)
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool(annotations=READ_ONLY)
+  @mcp.tool(
+    annotations=READ_ONLY,
+    title="List Events",
+    description="List calendar events with optional filters."
+  )
   async def list_events(
     status: Literal["scheduled", "ongoing", "completed", "cancelled"] | None = None,
     start: DateTime | None = None,
@@ -236,16 +205,6 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     limit: int = 100,
     offset: int = 0,
   ) -> list[Event]:
-    """List calendar events with optional filters.
-
-    Args:
-      status: Filter by status ('scheduled', 'ongoing', 'completed', 'cancelled').
-      start: Only events starting at or after this date/time.
-      end: Only events starting at or before this date/time.
-      tags: Filter by tags (all tags must match).
-      limit: Maximum number of events to return.
-      offset: Number of events to skip.
-    """
     service = app.state.event_service
     try:
       return await service.list(
@@ -259,7 +218,10 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool()
+  @mcp.tool(
+    title="Update Event",
+    description="Update an existing event."
+  )
   async def update_event(
     event_id: str,
     title: str | None = None,
@@ -272,20 +234,6 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     reminders: list[int] | None = None,
     status: Literal["scheduled", "ongoing", "completed", "cancelled"] | None = None,
   ) -> Event:
-    """Update an existing event.
-
-    Args:
-      event_id: ID of the event to update.
-      title: New title.
-      description: New description.
-      start_datetime: New start time.
-      end_datetime: New end time.
-      location: New location.
-      attendees: New attendee list.
-      tags: New tag list.
-      reminders: New reminder offsets.
-      status: New status.
-    """
     service = app.state.event_service
     update_data = {}
     if title is not None:
@@ -312,13 +260,11 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool()
+  @mcp.tool(
+    title="Delete Event",
+    description="Delete a calendar event."
+  )
   async def delete_event(event_id: str) -> dict[str, str]:
-    """Delete a calendar event.
-
-    Args:
-      event_id: ID of the event to delete.
-    """
     service = app.state.event_service
     try:
       return await service.delete(event_id)
@@ -327,7 +273,11 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
 
   # --- Notifications Tools ---
 
-  @mcp.tool(annotations=READ_ONLY)
+  @mcp.tool(
+    annotations=READ_ONLY,
+    title="List Notifications",
+    description="List notification messages with optional filters."
+  )
   async def list_notifications(
     type: Literal["reminder", "event"] | None = None,
     tags: list[str] | None = None,
@@ -335,15 +285,6 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     limit: int = 100,
     offset: int = 0,
   ) -> list[Notification]:
-    """List notification messages with optional filters.
-
-    Args:
-      type: Filter by type ('reminder', 'event').
-      tags: Filter by tags (all tags must match).
-      read_status: Filter by read status (True/False).
-      limit: Maximum records to return.
-      offset: Number of records to skip.
-    """
     service = app.state.notification_service
     try:
       return await service.list(
@@ -356,35 +297,34 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool(annotations=READ_ONLY)
+  @mcp.tool(
+    annotations=READ_ONLY,
+    title="Get Unread Count",
+    description="Get the number of unread notifications."
+  )
   async def get_unread_count() -> dict[str, int]:
-    """Get the number of unread notifications."""
     service = app.state.notification_service
     try:
       return await service.unread_count()
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool()
+  @mcp.tool(
+    title="Mark Notification Read",
+    description="Mark a single notification as read."
+  )
   async def mark_notification_read(notification_id: str) -> Notification:
-    """Mark a single notification as read.
-
-    Args:
-      notification_id: ID of the notification to mark read.
-    """
     service = app.state.notification_service
     try:
       return await service.mark_read(notification_id)
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool()
+  @mcp.tool(
+    title="Mark All Notifications Read",
+    description="Mark all notifications as read, optionally filtered by tags."
+  )
   async def mark_all_notifications_read(tags: list[str] | None = None) -> dict[str, int | str]:
-    """Mark all notifications as read, optionally filtered by tags.
-
-    Args:
-      tags: Optional tags to limit the scope of the read operation.
-    """
     service = app.state.notification_service
     try:
       return await service.mark_all_read(tags)
@@ -393,39 +333,34 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
 
   # --- CalDAV Tools ---
 
-  @mcp.tool(annotations=READ_ONLY)
+  @mcp.tool(
+    annotations=READ_ONLY,
+    title="List CalDAV Accounts",
+    description="List registered CalDAV calendar accounts."
+  )
   async def list_caldav_accounts(active_only: bool = False) -> list[CalDAVAccount]:
-    """List registered CalDAV calendar accounts.
-
-    Args:
-      active_only: If true, only returns active accounts.
-    """
     service = app.state.caldav_service
     try:
       return await service.list_accounts(active_only=active_only)
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool()
+  @mcp.tool(
+    title="Sync Event to CalDAV",
+    description="Synchronize a local event with configured CalDAV accounts."
+  )
   async def sync_event_to_caldav(event_id: str) -> list[CalDAVSyncResult]:
-    """Synchronize a local event with configured CalDAV accounts.
-
-    Args:
-      event_id: ID of the local event to sync.
-    """
     service = app.state.caldav_service
     try:
       return await service.sync_event(event_id)
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool()
+  @mcp.tool(
+    title="Sync All Events to CalDAV",
+    description="Synchronize multiple local events with CalDAV, optionally filtered by tags."
+  )
   async def sync_all_events_to_caldav(tags: list[str] | None = None) -> list[CalDAVSyncResult]:
-    """Synchronize multiple local events with CalDAV, optionally filtered by tags.
-
-    Args:
-      tags: Optional tags to filter local events.
-    """
     service = app.state.caldav_service
     try:
       return await service.sync_events(tags)
