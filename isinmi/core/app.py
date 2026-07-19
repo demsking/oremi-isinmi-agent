@@ -80,7 +80,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     caldav_repository = CalDAVRepository(db)
 
     app.state.settings = resolved_settings
-    app.state.mcp = mcp
     app.state.db = db
     app.state.sse_manager = sse
     app.state.notification_service = notification_service
@@ -130,7 +129,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     ),
     stateless_http=True,
     json_response=True,
-    streamable_http_path="/",
+    streamable_http_path="/mcp",
     website_url=APP_DOCUMENTATION_URL,
   )
 
@@ -143,8 +142,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
   async def redirect_to_docs():
     return HTMLResponse(status_code=307, headers={"Location": prefix + docs.router.prefix})
 
-  app.state.mcp = mcp
-
   prefix = "" if resolved_settings.api_prefix == "/" else resolved_settings.api_prefix
   api_prefix = f"{prefix}/api"
 
@@ -155,7 +152,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
   app.include_router(health.router, prefix=prefix)
   app.include_router(docs.router, prefix=prefix)
 
-  app.mount(f"{prefix}/mcp", mcp.streamable_http_app(), name="mcp")
+  app.mount(resolved_settings.api_prefix, mcp.streamable_http_app(), name="mcp")
 
   register_mcp_tools(mcp, app)
   register_mcp_resources(mcp, app)

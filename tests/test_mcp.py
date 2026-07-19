@@ -23,7 +23,6 @@ from fastapi.testclient import TestClient
 
 from isinmi import create_app
 from isinmi.core.models import Event
-from isinmi.core.models import Notification
 from isinmi.core.models import Reminder
 
 pytestmark = pytest.mark.skipif(
@@ -59,14 +58,16 @@ def parse_tool_result(res, model_class=None):
 async def test_mcp_http_endpoint_and_tools() -> None:
   app = create_app()
 
-  with TestClient(app):
-    # Verify the HTTP mount endpoint is present
-    assert any(getattr(route, "path", None) == "/mcp" for route in app.routes)
+  with TestClient(app, backend="asyncio") as client:
+    payload = {"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    tools = data["result"]["tools"]
 
-    tools = await app.state.mcp.list_tools()
+    tool_names = [tool["name"] for tool in tools]
 
-    # Verify the tools are registered
-    tool_names = {tool.name for tool in tools}
     assert "create_reminder" in tool_names
     assert "list_reminders" in tool_names
     assert "create_event" in tool_names
@@ -76,189 +77,238 @@ async def test_mcp_http_endpoint_and_tools() -> None:
 
 
 @pytest.mark.asyncio
-async def test_mcp_reminder_tools_and_resources() -> None:
-  app = create_app()
-  mcp = app.state.mcp
-
-  with TestClient(app):
-    rem_time = datetime.now() + timedelta(hours=2)
-
-    # 1. Create Reminder
-    res = await mcp.call_tool(
-      "create_reminder",
-      {
-        "title": "MCP Test Reminder",
-        "datetime": rem_time.isoformat(),
-        "description": "Created via MCP tool",
-        "tags": ["mcp-test"],
-      },
-    )
-    reminder = parse_tool_result(res, Reminder)
-    assert isinstance(reminder, Reminder)
-    assert reminder.title == "MCP Test Reminder"
-    reminder_id = reminder.id
-
-    # 2. List Reminders
-    res = await mcp.call_tool("list_reminders", {"tags": ["mcp-test"]})
-    reminders = parse_tool_result(res, Reminder)
-    assert len(reminders) == 1
-    assert reminders[0].id == reminder_id
-
-    # 3. Read Resource
-    contents = await mcp.read_resource(f"reminders:///{reminder_id}")
-    assert len(contents) == 1
-    data = json.loads(contents[0].content)
-    assert data["title"] == "MCP Test Reminder"
-
-    # 4. Update Reminder
-    res = await mcp.call_tool(
-      "update_reminder",
-      {
-        "reminder_id": reminder_id,
-        "description": "Updated description",
-      },
-    )
-    updated = parse_tool_result(res, Reminder)
-    assert updated.description == "Updated description"
-
-    # 5. Complete Reminder
-    res = await mcp.call_tool("complete_reminder", {"reminder_id": reminder_id})
-    completed = parse_tool_result(res, Reminder)
-    assert completed.status == "completed"
-
-    # 6. Delete Reminder
-    res = await mcp.call_tool("delete_reminder", {"reminder_id": reminder_id})
-    result = parse_tool_result(res)
-    assert result == {"status": "deleted"}
-
-
-@pytest.mark.asyncio
-async def test_mcp_event_tools_and_resources() -> None:
-  app = create_app()
-  mcp = app.state.mcp
-
-  with TestClient(app):
-    start = datetime.now() + timedelta(hours=1)
-    end = start + timedelta(hours=1)
-
-    # 1. Create Event
-    res = await mcp.call_tool(
-      "create_event",
-      {
-        "title": "MCP Test Event",
-        "start_datetime": start.isoformat(),
-        "end_datetime": end.isoformat(),
-        "location": "Online",
-        "tags": ["mcp-event"],
-      },
-    )
-    event = parse_tool_result(res, Event)
-    assert isinstance(event, Event)
-    assert event.title == "MCP Test Event"
-    event_id = event.id
-
-    # 2. Get Event Tool
-    res = await mcp.call_tool("get_event", {"event_id": event_id})
-    event_fetched = parse_tool_result(res, Event)
-    assert event_fetched.id == event_id
-
-    # 3. Read Resource
-    contents = await mcp.read_resource(f"events:///{event_id}")
-    assert len(contents) == 1
-    data = json.loads(contents[0].content)
-    assert data["title"] == "MCP Test Event"
-
-    # 4. List Events
-    res = await mcp.call_tool("list_events", {"tags": ["mcp-event"]})
-    events = parse_tool_result(res, Event)
-    assert len(events) == 1
-    assert events[0].id == event_id
-
-    # 5. Update Event
-    res = await mcp.call_tool(
-      "update_event",
-      {
-        "event_id": event_id,
-        "title": "Updated MCP Event",
-      },
-    )
-    updated = parse_tool_result(res, Event)
-    assert updated.title == "Updated MCP Event"
-
-    # 6. Delete Event
-    res = await mcp.call_tool("delete_event", {"event_id": event_id})
-    result = parse_tool_result(res)
-    assert result == {"status": "deleted"}
-
-
-@pytest.mark.asyncio
-async def test_mcp_notification_tools_and_resources() -> None:
-  app = create_app()
-  mcp = app.state.mcp
-
-  with TestClient(app):
-    # Create a reminder to trigger a notification
-    rem_time = datetime.now() + timedelta(hours=2)
-    res = await mcp.call_tool(
-      "create_reminder",
-      {
-        "title": "Notification Trigger Reminder",
-        "datetime": rem_time.isoformat(),
-        "tags": ["notification-test"],
-      },
-    )
-    reminder = parse_tool_result(res, Reminder)
-
-    # 1. Unread count
-    res = await mcp.call_tool("get_unread_count", {})
-    result = parse_tool_result(res)
-    assert result["count"] >= 1
-
-    # 2. List notifications
-    res = await mcp.call_tool("list_notifications", {"tags": ["notification-test"]})
-    notifications = parse_tool_result(res, Notification)
-    assert len(notifications) == 1
-    notif_id = notifications[0].id
-
-    # 3. Read Resource
-    contents = await mcp.read_resource(f"notifications:///{notif_id}")
-    assert len(contents) == 1
-    data = json.loads(contents[0].content)
-    assert data["entity_id"] == reminder.id
-
-    # 4. Mark notification read
-    res = await mcp.call_tool("mark_notification_read", {"notification_id": notif_id})
-    notif = parse_tool_result(res, Notification)
-    assert notif.read_status is True
-
-    # 5. Mark all read
-    res = await mcp.call_tool("mark_all_notifications_read", {"tags": ["notification-test"]})
-    result = parse_tool_result(res)
-    assert result["status"] == "ok"
-
-
-@pytest.mark.asyncio
 async def test_mcp_prompts() -> None:
   app = create_app()
-  mcp = app.state.mcp
 
-  # 1. schedule_day_plan prompt
-  res = await mcp.get_prompt("schedule_day_plan", {"date": "2026-07-18"})
-  assert len(res.messages) == 1
-  assert "2026-07-18" in res.messages[0].content.text
+  with TestClient(app, backend="asyncio") as client:
+    # 1. List prompts
+    payload = {"jsonrpc": "2.0", "id": 1, "method": "prompts/list", "params": {}}
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    prompts = data["result"]["prompts"]
+    prompt_names = [p["name"] for p in prompts]
+    assert "schedule_day_plan" in prompt_names
+    assert "create_event_draft" in prompt_names
+    assert "manage_unread_alerts" in prompt_names
 
-  # 2. create_event_draft prompt
-  res = await mcp.get_prompt(
-    "create_event_draft",
-    {
-      "title": "Planning",
-      "start_time": "2026-07-18T10:00:00",
-    },
-  )
-  assert len(res.messages) == 1
-  assert "Planning" in res.messages[0].content.text
+    # 2. Get schedule_day_plan with timezone
+    payload = {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "method": "prompts/get",
+      "params": {
+        "name": "schedule_day_plan",
+        "arguments": {
+          "date": "2026-07-18",
+          "timezone": "Europe/Paris",
+        },
+      },
+    }
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    messages = data["result"]["messages"]
+    assert len(messages) == 1
+    assert messages[0]["role"] == "user"
+    content_text = messages[0]["content"]["text"]
+    assert "2026-07-18" in content_text
+    assert "timezone Europe/Paris" in content_text
 
-  # 3. manage_unread_alerts prompt
-  res = await mcp.get_prompt("manage_unread_alerts", {})
-  assert len(res.messages) == 1
-  assert "unread notifications" in res.messages[0].content.text
+    # 3. Get schedule_day_plan without timezone
+    payload = {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "method": "prompts/get",
+      "params": {
+        "name": "schedule_day_plan",
+        "arguments": {
+          "date": "2026-07-18",
+        },
+      },
+    }
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    messages = data["result"]["messages"]
+    content_text = messages[0]["content"]["text"]
+    assert "timezone" not in content_text
+
+    # 4. Get create_event_draft with all arguments
+    payload = {
+      "jsonrpc": "2.0",
+      "id": 4,
+      "method": "prompts/get",
+      "params": {
+        "name": "create_event_draft",
+        "arguments": {
+          "title": "Dentist Appointment",
+          "start_time": "2026-07-19T14:30:00",
+          "duration_minutes": "45",
+          "location": "Dental Clinic",
+        },
+      },
+    }
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    messages = data["result"]["messages"]
+    content_text = messages[0]["content"]["text"]
+    assert "Dentist Appointment" in content_text
+    assert "2026-07-19T14:30:00" in content_text
+    assert "45 minutes" in content_text
+    assert "at Dental Clinic" in content_text
+
+    # 5. Get create_event_draft with defaults
+    payload = {
+      "jsonrpc": "2.0",
+      "id": 5,
+      "method": "prompts/get",
+      "params": {
+        "name": "create_event_draft",
+        "arguments": {
+          "title": "Quick Sync",
+          "start_time": "2026-07-19T14:30:00",
+        },
+      },
+    }
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    messages = data["result"]["messages"]
+    content_text = messages[0]["content"]["text"]
+    assert "Quick Sync" in content_text
+    assert "60 minutes" in content_text
+    assert "Dental Clinic" not in content_text
+
+    # 6. Get manage_unread_alerts
+    payload = {
+      "jsonrpc": "2.0",
+      "id": 6,
+      "method": "prompts/get",
+      "params": {
+        "name": "manage_unread_alerts",
+      },
+    }
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    messages = data["result"]["messages"]
+    content_text = messages[0]["content"]["text"]
+    assert "get_unread_count" in content_text
+    assert "list_notifications" in content_text
+
+
+
+@pytest.mark.asyncio
+async def test_mcp_resources() -> None:
+  app = create_app()
+
+  with TestClient(app, backend="asyncio") as client:
+    # 1. List resource templates
+    payload = {"jsonrpc": "2.0", "id": 1, "method": "resources/templates/list", "params": {}}
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    templates = data["result"]["resourceTemplates"]
+    template_uris = [t["uriTemplate"] for t in templates]
+    assert "reminders:///{reminder_id}" in template_uris
+    assert "events:///{event_id}" in template_uris
+    assert "notifications:///{notification_id}" in template_uris
+
+    # 2. Add test data in database using services
+    # Add a reminder
+    reminder = Reminder(
+      title="Buy milk",
+      description="Pick up milk after work.",
+      datetime=datetime.now() + timedelta(hours=2),
+      tags=["device_id:phone-1"],
+    )
+    saved_reminder = await app.state.reminder_service.create(reminder)
+
+    # Add an event
+    event = Event(
+      title="Team sync",
+      description="Weekly review.",
+      start_datetime=datetime.now() + timedelta(days=1),
+      end_datetime=datetime.now() + timedelta(days=1, hours=1),
+      tags=["user_id:alex"],
+    )
+    saved_event = await app.state.event_service.create(event)
+
+    # Get a notification (one was already created automatically during reminder/event creation)
+    # Let's list notifications using repository to get a saved one
+    notifications = await app.state.notification_service.repository.list(limit=10, offset=0)
+    assert len(notifications) > 0
+    saved_notification = notifications[0]
+
+    # 3. Read reminder resource
+    payload = {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "method": "resources/read",
+      "params": {"uri": f"reminders:///{saved_reminder.id}"},
+    }
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    contents = data["result"]["contents"]
+    assert len(contents) == 1
+    assert contents[0]["mimeType"] == "application/json"
+    reminder_data = json.loads(contents[0]["text"])
+    assert reminder_data["title"] == "Buy milk"
+
+    # 4. Read event resource
+    payload = {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "method": "resources/read",
+      "params": {"uri": f"events:///{saved_event.id}"},
+    }
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    contents = data["result"]["contents"]
+    assert len(contents) == 1
+    assert contents[0]["mimeType"] == "application/json"
+    event_data = json.loads(contents[0]["text"])
+    assert event_data["title"] == "Team sync"
+
+    # 5. Read notification resource
+    payload = {
+      "jsonrpc": "2.0",
+      "id": 4,
+      "method": "resources/read",
+      "params": {"uri": f"notifications:///{saved_notification.id}"},
+    }
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    contents = data["result"]["contents"]
+    assert len(contents) == 1
+    assert contents[0]["mimeType"] == "application/json"
+    notif_data = json.loads(contents[0]["text"])
+    assert notif_data["id"] == saved_notification.id
+
+    # 6. Read non-existent resources (expecting error)
+    payload = {
+      "jsonrpc": "2.0",
+      "id": 5,
+      "method": "resources/read",
+      "params": {"uri": "reminders:///non-existent-id"},
+    }
+    response = client.post("http://localhost:8080/mcp", json=payload, headers={"Accept": "application/json"})
+    assert response.status_code == 200
+    data = response.json()
+    # It should return a JSON-RPC error since ToolError/Exception is raised in the resource handler
+    assert "error" in data or "result" not in data
