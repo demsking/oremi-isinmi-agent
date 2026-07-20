@@ -130,7 +130,7 @@ Run the container using `docker compose`:
 docker compose up -d
 ```
 
-### Environment Variables
+## Environment Variables
 
 When configuring **Oremi Isinmi**, several environment variables are used to
 control its behavior and connect with external services. Below is a breakdown
@@ -139,7 +139,7 @@ of these variables, grouped by their purpose.
 All runtime settings use the `OREMI_ISINMI_` prefix and can be provided through
 the environment or a `.env` file in the working directory.
 
-#### Application and Server Settings
+### Application and Server Settings
 
 - `OREMI_ISINMI_SERVER_HOST`: Optional. Defaults to `0.0.0.0`. Host interface used by
   the Oremi Isinmi server.
@@ -148,7 +148,7 @@ the environment or a `.env` file in the working directory.
 - `OREMI_ISINMI_API_PREFIX`: Optional. Defaults to `/`. Prefix for all API
   routes. Must start with `/`.
 
-#### Database Settings
+### Database Settings
 
 - `OREMI_ISINMI_DATABASE_URL`: Optional. Defaults to
   `sqlite:///./oremi_isinmi.db`. Use `sqlite:///` for SQLCipher-backed local
@@ -167,38 +167,25 @@ Copy the output into `OREMI_ISINMI_DATABASE_ENCRYPTION_KEY`. If you want a
 plain ASCII key instead of base64, make sure it is at least 32 characters long
 and store it in your `.env` file without extra spaces or quotes.
 
-#### Realtime Notification Settings
+### Realtime Notification Settings
 
 - `OREMI_ISINMI_SSE_RETRY_TIMEOUT_SECONDS`: Optional. Defaults to `30`.
   Server-Sent Events client retry interval in seconds. Valid range: `1` to
   `120`.
 
-#### CalDAV Settings
+### CalDAV Settings
 
 - `OREMI_ISINMI_CALDAV_REQUEST_TIMEOUT_SECONDS`: Optional. Defaults to `30`.
   Maximum time in seconds to wait for a CalDAV server response. Valid range:
   `1` to `300`.
 
-#### Logging Settings
+### Logging Settings
 
 - `OREMI_ISINMI_LOG_LEVEL`: Optional. Defaults to `INFO`. Logging level:
   `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`.
 - `OREMI_ISINMI_LOG_FILE`: Optional. Rotating application log file path.
 
-#### Example
-
-```env
-OREMI_ISINMI_API_PREFIX=/
-OREMI_ISINMI_SERVER_HOST=0.0.0.0
-OREMI_ISINMI_SERVER_PORT=5073
-OREMI_ISINMI_DATABASE_URL=sqlite:///oremi/data/oremi_isinmi.db
-OREMI_ISINMI_DATABASE_ENCRYPTION_KEY=replace-this-with-at-least-32-characters
-OREMI_ISINMI_LOG_LEVEL=INFO
-OREMI_ISINMI_SSE_RETRY_TIMEOUT_SECONDS=30
-OREMI_ISINMI_CALDAV_REQUEST_TIMEOUT_SECONDS=30
-```
-
-### Storage Layer
+## Storage Layer
 
 The persistence layer uses SQLAlchemy ORM instead of hand-written SQL queries.
 SQLite remains encrypted through SQLCipher, while the same repositories can be
@@ -330,7 +317,7 @@ The server publishes high-level prompt templates to guide AI agents in multi-ste
 
 ## Contributing
 
-Oremi Device is built with Python and uses `uv` for dependency management. The
+Oremi Isinmi is built with Python and uses `uv` for dependency management. The
 project follows standard Python development practices with type hints, linting,
 and automated testing.
 
