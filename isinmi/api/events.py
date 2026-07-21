@@ -67,7 +67,7 @@ all live events. The stream emits named events such as `new_reminder`,
 **JavaScript example**
 
 ```javascript
-const stream = new EventSource("http://localhost:7337/api/events/stream?tags=device_id:iphone-14,user_id:alex");
+const stream = new EventSource("http://localhost:5073/api/events/stream?tags=device_id:iphone-14,user_id:alex");
 
 stream.addEventListener("new_reminder", (event) => {
   const reminder = JSON.parse(event.data);
@@ -89,7 +89,7 @@ stream.onerror = () => {
 import json
 import httpx
 
-url = "http://localhost:7337/api/events/stream?tags=device_id:iphone-14,user_id:alex"
+url = "http://localhost:5073/api/events/stream?tags=device_id:iphone-14,user_id:alex"
 
 with httpx.stream("GET", url, timeout=None) as response:
   response.raise_for_status()

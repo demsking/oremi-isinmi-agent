@@ -17,8 +17,8 @@ from fastapi import HTTPException
 from fastapi.responses import FileResponse
 from fastapi.responses import HTMLResponse
 
+from isinmi.core.package import HTDOCS_DIR
 from isinmi.core.package import PROJECT_DIRECTORY
-from isinmi.core.package import STATIC_DIR
 
 router = APIRouter(prefix="/docs")
 
@@ -30,9 +30,9 @@ SERVICE_DESCRIPTION = (
 
 @router.get("/static/{file_path:path}", include_in_schema=False)
 async def static_asset(file_path: str) -> FileResponse:
-  asset = (STATIC_DIR / file_path).resolve()
+  asset = (HTDOCS_DIR / file_path).resolve()
 
-  if STATIC_DIR not in asset.parents and asset != STATIC_DIR:
+  if HTDOCS_DIR not in asset.parents and asset != HTDOCS_DIR:
     raise HTTPException(status_code=404, detail="Static asset not found")
 
   if not asset.is_file():

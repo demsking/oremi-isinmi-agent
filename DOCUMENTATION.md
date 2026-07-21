@@ -93,7 +93,7 @@ to run Oremi Isinmi:
 ```sh
 docker run -d \
   --env-file <path_to_env_file> \
-  -v ~/.config/oremi-isinmi:/oremi/data \
+  -v ~/.local/share/oremi-isinmi:/oremi/data \
   -p 5073:5073 \
   demsking/oremi-isinmi
 ```

@@ -33,7 +33,7 @@ class Settings(BaseSettings):
   )
 
   server_host: str = Field(default="127.0.0.1", description="Host to bind the server.")
-  server_port: int = Field(default=7337, description="Port to bind the server.")
+  server_port: int = Field(default=5073, ge=1, le=65535, description="Port to bind the server.")
 
   api_prefix: str = Field(default="/", description="API prefix for all endpoints.")
 
