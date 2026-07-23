@@ -77,7 +77,9 @@ if __name__ == "__main__":
     asyncio.run(main())
   except KeyboardInterrupt:
     pass
-  except Exception as exc:
-    print("Oremi Isinmi failed to start:", file=sys.stderr)
-    print(f"- {exc}", file=sys.stderr)
-    sys.exit(4)
+  except Exception as exception:
+    if logger.isEnabledFor(logging.DEBUG):
+      logger.exception(exception)
+
+    logger.error(f"Oremi Isinmi failed to start: {exception}")
+    sys.exit(3)
