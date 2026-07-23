@@ -50,6 +50,6 @@ VOLUME /oremi/data
 
 EXPOSE 5073
 
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD prefix="${OREMI_ISINMI_API_PREFIX:-/}"; prefix="/${prefix#/}"; prefix="${prefix%/}"; curl -fsS "http://127.0.0.1:${OREMI_ISINMI_SERVER_PORT:-5040}${prefix}/health/" || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD prefix="${OREMI_ISINMI_API_PREFIX:-/}"; prefix="/${prefix#/}"; prefix="${prefix%/}"; curl -fsS "http://127.0.0.1:${OREMI_ISINMI_SERVER_PORT:-5073}${prefix}/health/" || exit 1
 
 CMD ["python", "/oremi/isinmi"]
