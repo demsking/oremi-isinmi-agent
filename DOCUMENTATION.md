@@ -329,17 +329,17 @@ tests, code style guidelines, and the pull request process, please refer to
 
 ## Versioning
 
-Oremi Isinmi follows [Semantic Versioning](https://semver.org/). Check the
-installed application version via the `/health` endpoint:
+Oremi Isinmi project adheres to [Semantic Versioning](https://semver.org/)
+(SemVer). Version numbers follow the `MAJOR.MINOR.PATCH` format:
+
+- **MAJOR** version increments for incompatible API changes
+- **MINOR** version increments for backward-compatible new functionality
+- **PATCH** version increments for backward-compatible bug fixes
+
+The current version can be found by running:
 
 ```bash
-curl http://localhost:5073/health
-```
-
-or via Python:
-
-```bash
-python -c "import isinmi; print(isinmi.__version__)"
+oremi-isinmi --version
 ```
 
 ## License
