@@ -277,12 +277,6 @@ The server provides a rich catalog of strongly-typed tools representing scheduli
 - `mark_notification_read`: Mark a specific notification as read.
 - `mark_all_notifications_read`: Bulk mark notifications as read.
 
-#### CalDAV Accounts Sync
-
-- `list_caldav_accounts`: Retrieve registered CalDAV accounts.
-- `sync_event_to_caldav`: Synchronize a local event with configured CalDAV accounts.
-- `sync_all_events_to_caldav`: Synchronize multiple local events with CalDAV, optionally filtered by tags.
-
 ### Available MCP Resources
 
 AI agents can directly inspect the state of resources using URI-based resource paths. The resource payloads are returned as raw JSON:

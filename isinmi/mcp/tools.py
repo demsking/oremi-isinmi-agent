@@ -21,8 +21,6 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
-from isinmi.core.models import CalDAVAccount
-from isinmi.core.models import CalDAVSyncResult
 from isinmi.core.models import Event
 from isinmi.core.models import EventCreate
 from isinmi.core.models import EventUpdate
@@ -331,41 +329,5 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
 
     try:
       return await service.mark_all_read(tags)
-    except Exception as exc:
-      raise ToolError(str(exc))
-
-  # --- CalDAV Tools ---
-
-  @mcp.tool(
-    annotations=READ_ONLY,
-    title="List CalDAV Accounts",
-    description="List registered CalDAV calendar accounts."
-  )
-  async def list_caldav_accounts(active_only: bool = False) -> list[CalDAVAccount]:
-    service = app.state.caldav_service
-    try:
-      return cast(list[CalDAVAccount], await service.list_accounts(active_only=active_only))
-    except Exception as exc:
-      raise ToolError(str(exc))
-
-  @mcp.tool(
-    title="Sync Event to CalDAV",
-    description="Synchronize a local event with configured CalDAV accounts."
-  )
-  async def sync_event_to_caldav(event_id: str) -> list[CalDAVSyncResult]:
-    service = app.state.caldav_service
-    try:
-      return cast(list[CalDAVSyncResult], await service.sync_event(event_id))
-    except Exception as exc:
-      raise ToolError(str(exc))
-
-  @mcp.tool(
-    title="Sync All Events to CalDAV",
-    description="Synchronize multiple local events with CalDAV, optionally filtered by tags."
-  )
-  async def sync_all_events_to_caldav(tags: list[str] | None = None) -> list[CalDAVSyncResult]:
-    service = app.state.caldav_service
-    try:
-      return cast(list[CalDAVSyncResult], await service.sync_events(tags))
     except Exception as exc:
       raise ToolError(str(exc))
