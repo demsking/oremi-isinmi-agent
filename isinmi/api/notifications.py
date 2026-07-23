@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 from typing import Annotated
+from typing import cast
 from typing import Literal
 
 from fastapi import APIRouter
@@ -54,7 +55,7 @@ NOTIFICATION_ID_PATH_EXAMPLES: dict[str, Example] = {
 
 
 def service(request: Request) -> NotificationService:
-  return request.app.state.notification_service
+  return cast(NotificationService, request.app.state.notification_service)
 
 
 @router.get(
@@ -112,7 +113,7 @@ async def list_notifications(
     },
   ),
 ) -> list[Notification]:
-  return await service(request).list(type_, parse_tags_query(tags), read_status, limit, offset)
+  return await service(request).list_notifications(type_, parse_tags_query(tags), read_status, limit, offset)
 
 
 @router.get(

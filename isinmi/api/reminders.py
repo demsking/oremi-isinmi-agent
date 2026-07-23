@@ -14,6 +14,7 @@
 # ==============================================================================
 from datetime import datetime
 from typing import Annotated
+from typing import cast
 from typing import Literal
 
 from fastapi import APIRouter
@@ -156,7 +157,7 @@ REMINDER_ID_PATH_EXAMPLES: dict[str, Example] = {
 
 
 def service(request: Request) -> ReminderService:
-  return request.app.state.reminder_service
+  return cast(ReminderService, request.app.state.reminder_service)
 
 
 @router.post(
@@ -274,7 +275,7 @@ async def list_reminders(
   If no filters are provided, all reminders will be returned.
   """
   ensure_date_range(start, end)
-  return await service(request).list(status, start, end, parse_tags_query(tags), upcoming, limit, offset)
+  return await service(request).list_reminders(status, start, end, parse_tags_query(tags), upcoming, limit, offset)
 
 
 @router.put(

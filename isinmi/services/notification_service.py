@@ -38,14 +38,14 @@ class NotificationService:
     entity_id: str,
     tags: list[str],
   ) -> Notification:
-    notification = Notification(type=type_, message=message, entity_id=entity_id, tags=tags)
+    notification = Notification(type=type_, message=message, entity_id=entity_id, tags=tags, read_at=None)
     saved = await self.repository.create(notification)
 
     await self.sse.publish(f"new_{type_}", saved.model_dump(), saved.tags)
 
     return saved
 
-  async def list(
+  async def list_notifications(
     self,
     type_: Literal["reminder", "event"] | None,
     tags: list[str],
@@ -53,7 +53,7 @@ class NotificationService:
     limit: int,
     offset: int,
   ) -> list[Notification]:
-    return await self.repository.list(type_=type_, tags=tags, read_status=read_status, limit=limit, offset=offset)
+    return await self.repository.list_notifications(type_=type_, tags=tags, read_status=read_status, limit=limit, offset=offset)
 
   async def unread_count(self) -> dict[str, int]:
     return {"count": await self.repository.unread_count()}

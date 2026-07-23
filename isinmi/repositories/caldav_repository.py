@@ -15,8 +15,11 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import cast
+from typing import Literal
 
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from isinmi.core.database import Database
 from isinmi.core.models import CalDAVAccount
@@ -35,7 +38,7 @@ class CalDAVRepository:
     self.db = db
 
   async def create_account(self, payload: CalDAVAccountCreate) -> CalDAVAccount:
-    def _operation(session):
+    def _operation(session: Session) -> CalDAVAccountORM:
       now = datetime.now()
       record = CalDAVAccountORM(
         id=new_id(),
@@ -68,13 +71,13 @@ class CalDAVRepository:
     return [CalDAVAccount.model_validate(row) for row in rows]
 
   async def list_account_records(self, active_only: bool = False) -> list[CalDAVAccountORM]:
-    def _operation(session):
+    def _operation(session: Session) -> list[CalDAVAccountORM]:
       stmt = select(CalDAVAccountORM).order_by(CalDAVAccountORM.created_at.asc())
 
       if active_only:
         stmt = stmt.where(CalDAVAccountORM.is_active.is_(True))
 
-      return session.scalars(stmt).all()
+      return list(session.scalars(stmt).all())
 
     return await self.db.run(_operation)
 
@@ -84,13 +87,13 @@ class CalDAVRepository:
     return CalDAVAccount.model_validate(record) if record else None
 
   async def get_account_record(self, account_id: str) -> CalDAVAccountORM | None:
-    def _operation(session):
+    def _operation(session: Session) -> CalDAVAccountORM | None:
       return session.get(CalDAVAccountORM, account_id)
 
     return await self.db.run(_operation)
 
   async def update_account(self, account_id: str, changes: CalDAVAccountUpdate) -> CalDAVAccount | None:
-    def _operation(session):
+    def _operation(session: Session) -> CalDAVAccountORM | None:
       record = session.get(CalDAVAccountORM, account_id)
 
       if record is None:
@@ -114,7 +117,7 @@ class CalDAVRepository:
     return CalDAVAccount.model_validate(record) if record else None
 
   async def delete_account(self, account_id: str) -> bool:
-    def _operation(session):
+    def _operation(session: Session) -> bool:
       record = session.get(CalDAVAccountORM, account_id)
 
       if record is None:
@@ -133,10 +136,10 @@ class CalDAVRepository:
     return [CalDAVAccount.model_validate(row) for row in rows]
 
   async def list_account_records_for_event(self, event_tags: list[str]) -> list[CalDAVAccountORM]:
-    def _operation(session):
-      return session.scalars(select(CalDAVAccountORM).where(CalDAVAccountORM.is_active.is_(True))).all()
+    def _operation(session: Session) -> list[CalDAVAccountORM]:
+      return list(session.scalars(select(CalDAVAccountORM).where(CalDAVAccountORM.is_active.is_(True))).all())
 
-    rows = await self.db.run(_operation)
+    rows: list[CalDAVAccountORM] = await self.db.run(_operation)
 
     if not event_tags:
       return rows
@@ -146,7 +149,7 @@ class CalDAVRepository:
     return [account for account in rows if not account.tags or requested.issuperset(account.tags)]
 
   async def get_link(self, account_id: str, event_id: str) -> dict[str, str] | None:
-    def _operation(session):
+    def _operation(session: Session) -> dict[str, str] | None:
       stmt = select(CalDAVEventLinkORM).where(
         CalDAVEventLinkORM.account_id == account_id,
         CalDAVEventLinkORM.event_id == event_id,
@@ -181,7 +184,7 @@ class CalDAVRepository:
     sync_status: str,
     last_sync_error: str | None = None,
   ) -> None:
-    def _operation(session):
+    def _operation(session: Session) -> None:
       record = session.scalars(
         select(CalDAVEventLinkORM).where(
           CalDAVEventLinkORM.account_id == account_id,
@@ -221,7 +224,7 @@ class CalDAVRepository:
     await self.db.run(_operation)
 
   async def mark_link_deleted(self, account_id: str, event_id: str) -> None:
-    def _operation(session):
+    def _operation(session: Session) -> None:
       record = session.scalars(
         select(CalDAVEventLinkORM).where(
           CalDAVEventLinkORM.account_id == account_id,
@@ -239,7 +242,7 @@ class CalDAVRepository:
     await self.db.run(_operation)
 
   async def list_links_for_event(self, event_id: str) -> list[dict[str, str]]:
-    def _operation(session):
+    def _operation(session: Session) -> list[dict[str, str]]:
       stmt = select(CalDAVEventLinkORM).where(CalDAVEventLinkORM.event_id == event_id)
       rows = session.scalars(stmt).all()
       return [
@@ -260,7 +263,7 @@ class CalDAVRepository:
     return await self.db.run(_operation)
 
   async def set_account_sync_state(self, account_id: str, sync_token: str | None, error: str | None = None) -> None:
-    def _operation(session):
+    def _operation(session: Session) -> None:
       record = session.get(CalDAVAccountORM, account_id)
 
       if record is None:
@@ -274,12 +277,12 @@ class CalDAVRepository:
     await self.db.run(_operation)
 
   async def list_sync_results(self, account_id: str) -> list[CalDAVSyncResult]:
-    def _operation(session):
+    def _operation(session: Session) -> list[CalDAVEventLinkORM]:
       stmt = select(CalDAVEventLinkORM).where(CalDAVEventLinkORM.account_id == account_id)
 
-      return session.scalars(stmt).all()
+      return list(session.scalars(stmt).all())
 
-    rows = await self.db.run(_operation)
+    rows: list[CalDAVEventLinkORM] = await self.db.run(_operation)
 
     return [
       CalDAVSyncResult(
@@ -288,7 +291,7 @@ class CalDAVRepository:
         remote_uid=row.remote_uid,
         remote_href=row.remote_href,
         etag=row.remote_etag,
-        status=row.sync_status,  # type: ignore[arg-type]
+        status=cast(Literal["synced", "failed", "deleted"], row.sync_status),
         message=row.last_sync_error,
       )
       for row in rows

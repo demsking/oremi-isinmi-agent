@@ -230,6 +230,7 @@ async def test_mcp_resources() -> None:
       description="Pick up milk after work.",
       datetime=datetime.now() + timedelta(hours=2),
       tags=["device_id:phone-1"],
+      notified_at=None,
     )
     saved_reminder = await app.state.reminder_service.create(reminder)
 
@@ -239,13 +240,14 @@ async def test_mcp_resources() -> None:
       description="Weekly review.",
       start_datetime=datetime.now() + timedelta(days=1),
       end_datetime=datetime.now() + timedelta(days=1, hours=1),
+      location=None,
       tags=["user_id:alex"],
     )
     saved_event = await app.state.event_service.create(event)
 
     # Get a notification (one was already created automatically during reminder/event creation)
     # Let's list notifications using repository to get a saved one
-    notifications = await app.state.notification_service.repository.list(limit=10, offset=0)
+    notifications = await app.state.notification_service.repository.list_notifications(limit=10, offset=0)
     assert len(notifications) > 0
     saved_notification = notifications[0]
 

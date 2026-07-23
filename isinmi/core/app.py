@@ -17,6 +17,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.responses import JSONResponse
 from mcp.server.fastmcp import FastMCP
@@ -134,12 +135,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
   )
 
   @app.exception_handler(Exception)
-  async def unhandled_exception_handler(_, exc: Exception) -> JSONResponse:
+  async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.exception("Unhandled application error")
     return JSONResponse(status_code=500, content={"detail": "Internal server error", "error": str(exc)})
 
   @app.get("/", include_in_schema=False)
-  async def redirect_to_docs():
+  async def redirect_to_docs() -> HTMLResponse:
     return HTMLResponse(status_code=307, headers={"Location": prefix + docs.router.prefix})
 
   prefix = "" if resolved_settings.api_prefix == "/" else resolved_settings.api_prefix

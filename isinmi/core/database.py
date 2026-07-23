@@ -69,7 +69,7 @@ class Database:
 
     if url.drivername.startswith("sqlite"):
       try:
-        import sqlcipher3 as sqlite
+        import sqlcipher3 as sqlite  # type: ignore[import-untyped]
       except ImportError as exc:
         raise RuntimeError("sqlcipher3 is required for encrypted SQLite storage") from exc
 

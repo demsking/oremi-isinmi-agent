@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from fastapi import HTTPException
 
@@ -24,6 +25,9 @@ from isinmi.core.models import EventCreate
 from isinmi.core.models import EventUpdate
 from isinmi.repositories.event_repository import EventRepository
 from isinmi.services.notification_service import NotificationService
+
+if TYPE_CHECKING:
+  from isinmi.integrations.caldav.service import CalDAVSyncService
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +38,9 @@ class EventService:
   def __init__(self, repository: EventRepository, notifications: NotificationService) -> None:
     self.repository = repository
     self.notifications = notifications
-    self.caldav_sync_service = None
+    self.caldav_sync_service: CalDAVSyncService | None = None
 
-  def set_caldav_sync_service(self, caldav_sync_service: object | None) -> None:
+  def set_caldav_sync_service(self, caldav_sync_service: CalDAVSyncService | None) -> None:
     """Attach an optional CalDAV synchronization service."""
 
     self.caldav_sync_service = caldav_sync_service
@@ -58,7 +62,7 @@ class EventService:
 
     return event
 
-  async def list(
+  async def list_events(
     self,
     status: str | None,
     start: datetime | None,
@@ -67,7 +71,7 @@ class EventService:
     limit: int,
     offset: int,
   ) -> list[Event]:
-    return await self.repository.list(status=status, start=start, end=end, tags=tags, limit=limit, offset=offset)
+    return await self.repository.list_events(status=status, start=start, end=end, tags=tags, limit=limit, offset=offset)
 
   async def update(self, event_id: str, payload: EventUpdate) -> Event:
     event = await self.repository.update(event_id, payload.model_dump(exclude_unset=True))

@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 from typing import Annotated
+from typing import cast
 
 from fastapi import APIRouter
 from fastapi import Body
@@ -26,6 +27,7 @@ from isinmi.core.models import CalDAVAccount
 from isinmi.core.models import CalDAVAccountCreate
 from isinmi.core.models import CalDAVAccountUpdate
 from isinmi.core.models import CalDAVSyncResult
+from isinmi.integrations.caldav.service import CalDAVSyncService as CalDAVService
 from isinmi.utils.validators import parse_tags_query
 
 API_TAG_METADATA = {
@@ -108,8 +110,8 @@ CALDAV_SYNC_TAG_QUERY_EXAMPLES: dict[str, Example] = {
 }
 
 
-def service(request: Request):
-  return request.app.state.caldav_service
+def service(request: Request) -> CalDAVService:
+  return cast(CalDAVService, request.app.state.caldav_service)
 
 
 @router.post(

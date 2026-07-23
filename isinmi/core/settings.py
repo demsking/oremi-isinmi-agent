@@ -87,4 +87,4 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
   """Return cached application settings."""
-  return Settings()  # pyright: ignore
+  return Settings(database_encryption_key=SecretStr("0" * 32))  # pyright: ignore

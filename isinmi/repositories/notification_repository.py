@@ -19,6 +19,7 @@ from typing import Literal
 
 from sqlalchemy import func
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from isinmi.core.database import Database
 from isinmi.core.models import Notification
@@ -33,7 +34,7 @@ class NotificationRepository:
     self.db = db
 
   async def create(self, notification: Notification) -> Notification:
-    def _operation(session):
+    def _operation(session: Session) -> NotificationORM:
       record = NotificationORM(
         id=notification.id,
         type=notification.type,
@@ -51,7 +52,7 @@ class NotificationRepository:
     record = await self.db.run(_operation)
     return Notification.model_validate(record)
 
-  async def list(
+  async def list_notifications(
     self,
     type_: Literal["reminder", "event"] | None = None,
     read_status: bool | None = None,
@@ -59,7 +60,7 @@ class NotificationRepository:
     limit: int = 100,
     offset: int = 0,
   ) -> list[Notification]:
-    def _operation(session):
+    def _operation(session: Session) -> list[NotificationORM]:
       stmt = select(NotificationORM)
 
       if type_:
@@ -68,25 +69,28 @@ class NotificationRepository:
       if read_status is not None:
         stmt = stmt.where(NotificationORM.read_status == read_status)
 
-      tag_filter = build_tags_filter(NotificationORM.tags, tags or [], session.bind.dialect.name)  # pyright: ignore
+      dialect_name = session.bind.dialect.name if session.bind is not None else "sqlite"
+      tag_filter = build_tags_filter(NotificationORM.tags, tags or [], dialect_name)  # pyright: ignore
+
       if tag_filter is not None:
         stmt = stmt.where(tag_filter)
 
       stmt = stmt.order_by(NotificationORM.timestamp.desc()).limit(limit).offset(offset)
-      return session.scalars(stmt).all()
+
+      return list(session.scalars(stmt).all())
 
     rows = await self.db.run(_operation)
     return [Notification.model_validate(row) for row in rows]
 
   async def unread_count(self) -> int:
-    def _operation(session):
+    def _operation(session: Session) -> int:
       stmt = select(func.count()).select_from(NotificationORM).where(NotificationORM.read_status.is_(False))  # pylint: disable=not-callable
       return int(session.scalar(stmt) or 0)
 
     return await self.db.run(_operation)
 
   async def mark_read(self, notification_id: str) -> Notification | None:
-    def _operation(session):
+    def _operation(session: Session) -> NotificationORM | None:
       record = session.get(NotificationORM, notification_id)
 
       if record is None:
@@ -101,7 +105,7 @@ class NotificationRepository:
     return Notification.model_validate(record) if record else None
 
   async def mark_all_read(self) -> int:
-    def _operation(session):
+    def _operation(session: Session) -> int:
       records = session.scalars(select(NotificationORM).where(NotificationORM.read_status.is_(False))).all()
       for record in records:
         record.read_status = True
@@ -112,9 +116,10 @@ class NotificationRepository:
     return await self.db.run(_operation)
 
   async def mark_all_read_by_tags(self, tags: list[str]) -> int:
-    def _operation(session):
+    def _operation(session: Session) -> int:
       stmt = select(NotificationORM).where(NotificationORM.read_status.is_(False))
-      tag_filter = build_tags_filter(NotificationORM.tags, tags, session.bind.dialect.name)  # pyright: ignore
+      dialect_name = session.bind.dialect.name if session.bind is not None else "sqlite"
+      tag_filter = build_tags_filter(NotificationORM.tags, tags, dialect_name)  # pyright: ignore
 
       if tag_filter is not None:
         stmt = stmt.where(tag_filter)

@@ -42,62 +42,64 @@ async def static_asset(file_path: str) -> FileResponse:
 
 
 @router.get("/", include_in_schema=False, response_class=HTMLResponse)
-async def html_documentation():
-  return f"""
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Oremi Isinmi Documentation</title>
-        <link rel="icon" href="./static/favicon.png">
-      </head>
-      <body>
-        <div id="app"></div>
-        <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
-        <script type="module">
-          const response = await fetch('../openapi.json');
-          const openapi = await response.json();
-          const isGitlabPage = location.origin.includes('gitlab.io');
+async def html_documentation() -> HTMLResponse:
+  return HTMLResponse(
+    content=f"""
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8"/>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>Oremi Isinmi Documentation</title>
+          <link rel="icon" href="./static/favicon.png">
+        </head>
+        <body>
+          <div id="app"></div>
+          <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+          <script type="module">
+            const response = await fetch('../openapi.json');
+            const openapi = await response.json();
+            const isGitlabPage = location.origin.includes('gitlab.io');
 
-          openapi.info.title = 'Oremi Isinmi Documentation';
-          openapi.info.description = `{SERVICE_DESCRIPTION}`;
+            openapi.info.title = 'Oremi Isinmi Documentation';
+            openapi.info.description = `{SERVICE_DESCRIPTION}`;
 
-          if (isGitlabPage) {{
-            openapi.servers = [];
-          }}
+            if (isGitlabPage) {{
+              openapi.servers = [];
+            }}
 
-          Scalar.createApiReference('#app', {{
-            title: 'Oremi Isinmi API',
-            agent: {{
-              disabled: true,
-            }},
-            content: openapi,
-            hideClientButton: true,
-            hideTestRequestButton: isGitlabPage,
-            expandAllModelSections: false,
-            showSidebar: true,
-            showDeveloperTools: 'localhost',
-            operationTitleSource: 'summary',
-            theme: 'default',
-            persistAuth: false,
-            telemetry: false,
-            layout: 'modern',
-            isEditable: false,
-            isLoading: false,
-            hideModels: false,
-            documentDownloadType: 'both',
-            hideSearch: false,
-            showOperationId: false,
-            hideDarkModeToggle: false,
-            withDefaultFonts: true,
-            defaultOpenAllTags: false,
-            expandAllResponses: false,
-            orderSchemaPropertiesBy: 'alpha',
-            orderRequiredPropertiesFirst: true,
-            default: false,
-          }});
-        </script>
-      </body>
-    </html>
-  """
+            Scalar.createApiReference('#app', {{
+              title: 'Oremi Isinmi API',
+              agent: {{
+                disabled: true,
+              }},
+              content: openapi,
+              hideClientButton: true,
+              hideTestRequestButton: isGitlabPage,
+              expandAllModelSections: false,
+              showSidebar: true,
+              showDeveloperTools: 'localhost',
+              operationTitleSource: 'summary',
+              theme: 'default',
+              persistAuth: false,
+              telemetry: false,
+              layout: 'modern',
+              isEditable: false,
+              isLoading: false,
+              hideModels: false,
+              documentDownloadType: 'both',
+              hideSearch: false,
+              showOperationId: false,
+              hideDarkModeToggle: false,
+              withDefaultFonts: true,
+              defaultOpenAllTags: false,
+              expandAllResponses: false,
+              orderSchemaPropertiesBy: 'alpha',
+              orderRequiredPropertiesFirst: true,
+              default: false,
+            }});
+          </script>
+        </body>
+      </html>
+    """
+  )

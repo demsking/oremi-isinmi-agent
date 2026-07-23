@@ -17,6 +17,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from isinmi.core.database import Database
 from isinmi.core.models import Reminder
@@ -31,7 +32,7 @@ class ReminderRepository:
     self.db = db
 
   async def create(self, reminder: Reminder) -> Reminder:
-    def _operation(session):
+    def _operation(session: Session) -> ReminderORM:
       record = ReminderORM(
         id=reminder.id,
         title=reminder.title,
@@ -51,7 +52,7 @@ class ReminderRepository:
     return Reminder.model_validate(record)
 
   async def get(self, reminder_id: str) -> Reminder | None:
-    def _operation(session):
+    def _operation(session: Session) -> ReminderORM | None:
       return session.get(ReminderORM, reminder_id)
 
     record = await self.db.run(_operation)
@@ -66,7 +67,7 @@ class ReminderRepository:
     limit: int = 100,
     offset: int = 0,
   ) -> list[Reminder]:
-    def _operation(session):
+    def _operation(session: Session) -> list[ReminderORM]:
       stmt = select(ReminderORM)
 
       if status:
@@ -78,18 +79,21 @@ class ReminderRepository:
       if end is not None:
         stmt = stmt.where(ReminderORM.datetime <= end)
 
-      tag_filter = build_tags_filter(ReminderORM.tags, tags or [], session.bind.dialect.name)  # pyright: ignore
+      dialect_name = session.bind.dialect.name if session.bind is not None else "sqlite"
+      tag_filter = build_tags_filter(ReminderORM.tags, tags or [], dialect_name)  # pyright: ignore
+
       if tag_filter is not None:
         stmt = stmt.where(tag_filter)
 
       stmt = stmt.order_by(ReminderORM.datetime.asc()).limit(limit).offset(offset)
-      return session.scalars(stmt).all()
+
+      return list(session.scalars(stmt).all())
 
     rows = await self.db.run(_operation)
     return [Reminder.model_validate(row) for row in rows]
 
   async def update(self, reminder_id: str, changes: dict[str, object]) -> Reminder | None:
-    def _operation(session):
+    def _operation(session: Session) -> ReminderORM | None:
       record = session.get(ReminderORM, reminder_id)
 
       if record is None:
@@ -108,7 +112,7 @@ class ReminderRepository:
     return await self.update(reminder_id, {"status": "completed"})
 
   async def delete(self, reminder_id: str) -> bool:
-    def _operation(session):
+    def _operation(session: Session) -> bool:
       record = session.get(ReminderORM, reminder_id)
 
       if record is None:

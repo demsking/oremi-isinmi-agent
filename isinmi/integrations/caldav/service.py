@@ -68,7 +68,7 @@ class CalDAVSyncService:
     return results
 
   async def sync_events(self, tags: list[str] | None = None) -> list[CalDAVSyncResult]:
-    events = await self.events.list(status=None, start=None, end=None, tags=tags or [], limit=1000, offset=0)
+    events = await self.events.list_events(status=None, start=None, end=None, tags=tags or [], limit=1000, offset=0)
     results: list[CalDAVSyncResult] = []
 
     for event in events:

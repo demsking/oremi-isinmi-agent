@@ -17,6 +17,8 @@ from datetime import datetime
 from datetime import timedelta
 from pathlib import Path
 
+from pydantic import SecretStr
+
 from isinmi.core.database import Database
 from isinmi.core.models import Event
 from isinmi.core.models import Notification
@@ -29,7 +31,7 @@ from isinmi.repositories.reminder_repository import ReminderRepository
 
 async def test_reminder_repository_round_trip_with_tag_filter(tmp_path: Path) -> None:
   db_path = tmp_path / "reminders.db"
-  settings = Settings(database_encryption_key="x" * 32, database_url=f"sqlite:///{db_path}")
+  settings = Settings(database_encryption_key=SecretStr("x" * 32), database_url=f"sqlite:///{db_path}")
   database = Database(settings)
   try:
     await database.initialize()
@@ -40,6 +42,7 @@ async def test_reminder_repository_round_trip_with_tag_filter(tmp_path: Path) ->
       description="Pick up milk after work.",
       datetime=datetime.now() + timedelta(hours=2),
       tags=["device_id:phone-1", "user_id:alex"],
+      notified_at=None,
     )
 
     saved = await repository.create(reminder)
@@ -57,7 +60,7 @@ async def test_reminder_repository_round_trip_with_tag_filter(tmp_path: Path) ->
 
 async def test_event_repository_round_trip_with_tag_filter(tmp_path: Path) -> None:
   db_path = tmp_path / "events.db"
-  settings = Settings(database_encryption_key="x" * 32, database_url=f"sqlite:///{db_path}")
+  settings = Settings(database_encryption_key=SecretStr("x" * 32), database_url=f"sqlite:///{db_path}")
   database = Database(settings)
   try:
     await database.initialize()
@@ -69,12 +72,13 @@ async def test_event_repository_round_trip_with_tag_filter(tmp_path: Path) -> No
       description="Weekly review.",
       start_datetime=start,
       end_datetime=start + timedelta(hours=1),
+      location=None,
       tags=["device_id:laptop-1", "user_id:alex"],
     )
 
     saved = await repository.create(event)
     fetched = await repository.get(saved.id)
-    filtered = await repository.list(tags=["user_id:alex"])
+    filtered = await repository.list_events(tags=["user_id:alex"])
 
     assert fetched is not None
     assert fetched.id == saved.id
@@ -87,13 +91,19 @@ async def test_event_repository_round_trip_with_tag_filter(tmp_path: Path) -> No
 
 async def test_notification_repository_marks_all_read(tmp_path: Path) -> None:
   db_path = tmp_path / "notifications.db"
-  settings = Settings(database_encryption_key="x" * 32, database_url=f"sqlite:///{db_path}")
+  settings = Settings(database_encryption_key=SecretStr("x" * 32), database_url=f"sqlite:///{db_path}")
   database = Database(settings)
   try:
     await database.initialize()
 
     repository = NotificationRepository(database)
-    notification = Notification(type="reminder", message="Test notification", entity_id="reminder-1", tags=["test"])
+    notification = Notification(
+      type="reminder",
+      message="Test notification",
+      entity_id="reminder-1",
+      tags=["test"],
+      read_at=None,
+    )
 
     await repository.create(notification)
     assert await repository.unread_count() == 1
@@ -108,7 +118,7 @@ async def test_notification_repository_marks_all_read(tmp_path: Path) -> None:
 
 async def test_notification_repository_marks_all_read_by_tags(tmp_path: Path) -> None:
   db_path = tmp_path / "notifications_by_tags.db"
-  settings = Settings(database_encryption_key="x" * 32, database_url=f"sqlite:///{db_path}")
+  settings = Settings(database_encryption_key=SecretStr("x" * 32), database_url=f"sqlite:///{db_path}")
   database = Database(settings)
   try:
     await database.initialize()
@@ -119,12 +129,14 @@ async def test_notification_repository_marks_all_read_by_tags(tmp_path: Path) ->
       message="Tagged notification",
       entity_id="reminder-1",
       tags=["device_id:iphone"],
+      read_at=None,
     )
     other = Notification(
       type="event",
       message="Other notification",
       entity_id="event-2",
       tags=["device_id:android"],
+      read_at=None,
     )
 
     await repository.create(tagged)

@@ -58,7 +58,7 @@ class FakeClient:
 
 
 async def test_caldav_render_event_ical_includes_categories(tmp_path: Path) -> None:
-  settings = Settings(database_encryption_key="x" * 32, database_url=f"sqlite:///{tmp_path / 'caldav.db'}")
+  settings = Settings(database_encryption_key=SecretStr("x" * 32), database_url=f"sqlite:///{tmp_path / 'caldav.db'}")
   database = Database(settings)
   await database.initialize()
 
@@ -66,6 +66,8 @@ async def test_caldav_render_event_ical_includes_categories(tmp_path: Path) -> N
     service = CalDAVSyncService(CalDAVRepository(database), EventRepository(database), request_timeout=5)
     event = EventCreate(
       title="Team sync",
+      description=None,
+      location=None,
       start_datetime=datetime(2026, 7, 6, 9, 0, 0),
       end_datetime=datetime(2026, 7, 6, 9, 30, 0),
       tags=["work", "device_id:web"],
@@ -81,7 +83,7 @@ async def test_caldav_render_event_ical_includes_categories(tmp_path: Path) -> N
 
 
 async def test_caldav_sync_event_pushes_to_remote_calendar(tmp_path: Path, monkeypatch) -> None:
-  settings = Settings(database_encryption_key="x" * 32, database_url=f"sqlite:///{tmp_path / 'sync.db'}")
+  settings = Settings(database_encryption_key=SecretStr("x" * 32), database_url=f"sqlite:///{tmp_path / 'sync.db'}")
   database = Database(settings)
   await database.initialize()
 
@@ -102,6 +104,8 @@ async def test_caldav_sync_event_pushes_to_remote_calendar(tmp_path: Path, monke
 
     event_payload = EventCreate(
       title="Planning",
+      description=None,
+      location=None,
       start_datetime=datetime(2026, 7, 6, 10, 0, 0),
       end_datetime=datetime(2026, 7, 6, 11, 0, 0),
       tags=[],

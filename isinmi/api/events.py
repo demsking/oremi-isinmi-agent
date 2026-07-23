@@ -15,6 +15,8 @@
 import asyncio
 from datetime import datetime
 from typing import Annotated
+from typing import AsyncGenerator
+from typing import cast
 from typing import Literal
 
 from fastapi import APIRouter
@@ -230,15 +232,15 @@ EVENT_ID_PATH_EXAMPLES: dict[str, Example] = {
 
 
 def service(request: Request) -> EventService:
-  return request.app.state.event_service
+  return cast(EventService, request.app.state.event_service)
 
 
 def sse_manager(request: Request) -> SSEManager:
-  return request.app.state.sse_manager
+  return cast(SSEManager, request.app.state.sse_manager)
 
 
 def settings(request: Request) -> Settings:
-  return request.app.state.settings
+  return cast(Settings, request.app.state.settings)
 
 
 @router.get(
@@ -261,7 +263,7 @@ async def stream_events(
   sse_retry_timeout_seconds = settings(request).sse_retry_timeout_seconds
   sse_retry_timeout_miliseconds = sse_retry_timeout_seconds * 1000
 
-  async def event_generator():
+  async def event_generator() -> AsyncGenerator[dict[str, object], None]:
     try:
       yield {"retry": sse_retry_timeout_miliseconds}
 
@@ -368,7 +370,7 @@ async def list_events(
   ),
 ) -> list[Event]:
   ensure_date_range(start, end)
-  return await service(request).list(status, start, end, parse_tags_query(tags), limit, offset)
+  return await service(request).list_events(status, start, end, parse_tags_query(tags), limit, offset)
 
 
 @router.get(

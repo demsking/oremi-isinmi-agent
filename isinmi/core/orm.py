@@ -14,7 +14,7 @@
 # ==============================================================================
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime as PyDateTime
 
 from sqlalchemy import Boolean
 from sqlalchemy import CheckConstraint
@@ -48,12 +48,12 @@ class ReminderORM(Base):
   id: Mapped[str] = mapped_column(String, primary_key=True)
   title: Mapped[str] = mapped_column(String(200), nullable=False)
   description: Mapped[str | None] = mapped_column(String(500), nullable=True)
-  datetime: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+  datetime: Mapped[PyDateTime] = mapped_column(DateTime, nullable=False)
   recurring: Mapped[str] = mapped_column(String(16), nullable=False)
   tags: Mapped[list[str]] = mapped_column(JsonType, nullable=False)
   status: Mapped[str] = mapped_column(String(16), nullable=False)
-  created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-  notified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+  created_at: Mapped[PyDateTime] = mapped_column(DateTime, nullable=False)
+  notified_at: Mapped[PyDateTime | None] = mapped_column(DateTime, nullable=True)
 
 
 class EventORM(Base):
@@ -70,14 +70,14 @@ class EventORM(Base):
   id: Mapped[str] = mapped_column(String, primary_key=True)
   title: Mapped[str] = mapped_column(String(200), nullable=False)
   description: Mapped[str | None] = mapped_column(String(500), nullable=True)
-  start_datetime: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-  end_datetime: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+  start_datetime: Mapped[PyDateTime] = mapped_column(DateTime, nullable=False)
+  end_datetime: Mapped[PyDateTime] = mapped_column(DateTime, nullable=False)
   location: Mapped[str | None] = mapped_column(String(200), nullable=True)
   attendees: Mapped[list[str]] = mapped_column(JsonType, nullable=False)
   tags: Mapped[list[str]] = mapped_column(JsonType, nullable=False)
   reminders: Mapped[list[int]] = mapped_column(JsonType, nullable=False)
   status: Mapped[str] = mapped_column(String(16), nullable=False)
-  created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+  created_at: Mapped[PyDateTime] = mapped_column(DateTime, nullable=False)
 
 
 class NotificationORM(Base):
@@ -96,9 +96,9 @@ class NotificationORM(Base):
   message: Mapped[str] = mapped_column(String, nullable=False)
   entity_id: Mapped[str] = mapped_column(String, nullable=False)
   tags: Mapped[list[str]] = mapped_column(JsonType, nullable=False)
-  timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+  timestamp: Mapped[PyDateTime] = mapped_column(DateTime, nullable=False)
   read_status: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-  read_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+  read_at: Mapped[PyDateTime | None] = mapped_column(DateTime, nullable=True)
 
 
 class AgentConversationORM(Base):
@@ -112,7 +112,7 @@ class AgentConversationORM(Base):
   entity_type: Mapped[str] = mapped_column(String(32), nullable=False)
   tags: Mapped[list[str]] = mapped_column(JsonType, nullable=False)
   context: Mapped[dict[str, object]] = mapped_column(JsonType, nullable=False)
-  created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+  created_at: Mapped[PyDateTime] = mapped_column(DateTime, nullable=False)
 
 
 class CalDAVAccountORM(Base):
@@ -131,10 +131,10 @@ class CalDAVAccountORM(Base):
   tags: Mapped[list[str]] = mapped_column(JsonType, nullable=False)
   is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
   sync_token: Mapped[str | None] = mapped_column(String(500), nullable=True)
-  last_synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+  last_synced_at: Mapped[PyDateTime | None] = mapped_column(DateTime, nullable=True)
   last_sync_error: Mapped[str | None] = mapped_column(String(2000), nullable=True)
-  created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-  updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+  created_at: Mapped[PyDateTime] = mapped_column(DateTime, nullable=False)
+  updated_at: Mapped[PyDateTime] = mapped_column(DateTime, nullable=False)
 
 
 class CalDAVEventLinkORM(Base):
@@ -153,7 +153,7 @@ class CalDAVEventLinkORM(Base):
   remote_href: Mapped[str] = mapped_column(String(1000), nullable=False)
   remote_etag: Mapped[str | None] = mapped_column(String(200), nullable=True)
   sync_status: Mapped[str] = mapped_column(String(32), nullable=False)
-  last_synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+  last_synced_at: Mapped[PyDateTime | None] = mapped_column(DateTime, nullable=True)
   last_sync_error: Mapped[str | None] = mapped_column(String(2000), nullable=True)
-  created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-  updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+  created_at: Mapped[PyDateTime] = mapped_column(DateTime, nullable=False)
+  updated_at: Mapped[PyDateTime] = mapped_column(DateTime, nullable=False)

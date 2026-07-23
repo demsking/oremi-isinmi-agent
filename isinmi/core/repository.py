@@ -15,19 +15,21 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from sqlalchemy import and_
 from sqlalchemy import exists
 from sqlalchemy import func
 from sqlalchemy import Select
 from sqlalchemy import select
+from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy.sql.elements import ColumnElement
 
 from isinmi.core.models import clean_tags
 
 
 def build_tags_filter(
-  column: ColumnElement[list[str]],
+  column: ColumnElement[Any] | InstrumentedAttribute[Any],
   tags: list[str],
   dialect_name: str,
 ) -> ColumnElement[bool] | None:
@@ -55,7 +57,7 @@ def build_tags_filter(
   return and_(*expressions)
 
 
-def sort_limit_offset(query: Select, limit: int, offset: int) -> Select:
+def sort_limit_offset(query: Select[Any], limit: int, offset: int) -> Select[Any]:
   """Apply standard pagination bounds."""
 
   return query.limit(limit).offset(offset)

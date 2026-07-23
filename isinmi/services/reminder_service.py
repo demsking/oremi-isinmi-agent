@@ -49,7 +49,7 @@ class ReminderService:
 
     return reminder
 
-  async def list(
+  async def list_reminders(
     self,
     status: str | None,
     start: datetime | None,

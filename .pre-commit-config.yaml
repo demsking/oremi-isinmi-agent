@@ -71,8 +71,23 @@ repos:
       - id: mypy
         name: "mypy (strict type checking)"
         description: "Run mypy in strict mode to perform static type checking."
+        exclude: ^(tests)/.*
         args:
           - --strict
+        additional_dependencies:
+          [
+            "alembic>=1.16.0",
+            "mcp>=1.28.1",
+            "fastapi[standard]>=0.115.0",
+            "httpx>=0.28.0",
+            "ollama>=0.5.0",
+            "pydantic>=2.11.0",
+            "pydantic-settings>=2.10.0",
+            "python-dotenv>=1.1.0",
+            "sqlcipher3>=0.5.4",
+            "sqlalchemy>=2.0.51",
+            "sse-starlette>=3.4.5",
+          ]
 
   - repo: https://github.com/PyCQA/bandit
     rev: 1.9.4

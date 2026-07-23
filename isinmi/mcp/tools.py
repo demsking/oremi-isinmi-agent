@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 from datetime import datetime as DateTime
+from typing import cast
 from typing import Literal
 
 from fastapi import FastAPI
@@ -29,6 +30,9 @@ from isinmi.core.models import Notification
 from isinmi.core.models import Reminder
 from isinmi.core.models import ReminderCreate
 from isinmi.core.models import ReminderUpdate
+from isinmi.services.event_service import EventService
+from isinmi.services.notification_service import NotificationService
+from isinmi.services.reminder_service import ReminderService
 
 
 READ_ONLY = ToolAnnotations(readOnlyHint=True, idempotentHint=True)
@@ -50,7 +54,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     recurring: Literal["none", "daily", "weekly", "monthly"] = "none",
     tags: list[str] | None = None,
   ) -> Reminder:
-    service = app.state.reminder_service
+    service = cast(ReminderService, app.state.reminder_service)
     payload = ReminderCreate(
       title=title,
       datetime=datetime,
@@ -58,6 +62,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
       recurring=recurring,
       tags=tags or [],
     )
+
     try:
       return await service.create(payload)
     except Exception as exc:
@@ -77,9 +82,10 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     limit: int = 100,
     offset: int = 0,
   ) -> list[Reminder]:
-    service = app.state.reminder_service
+    service = cast(ReminderService, app.state.reminder_service)
+
     try:
-      return await service.list(
+      return await service.list_reminders(
         status=status,
         start=start,
         end=end,
@@ -104,21 +110,16 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     tags: list[str] | None = None,
     status: Literal["pending", "completed", "dismissed"] | None = None,
   ) -> Reminder:
-    service = app.state.reminder_service
-    update_data = {}
-    if title is not None:
-      update_data["title"] = title
-    if description is not None:
-      update_data["description"] = description
-    if datetime is not None:
-      update_data["datetime"] = datetime
-    if recurring is not None:
-      update_data["recurring"] = recurring
-    if tags is not None:
-      update_data["tags"] = tags
-    if status is not None:
-      update_data["status"] = status
-    payload = ReminderUpdate(**update_data)
+    service = cast(ReminderService, app.state.reminder_service)
+    payload = ReminderUpdate(
+      title=title,
+      description=description,
+      datetime=datetime,
+      recurring=recurring,
+      tags=tags,
+      status=status,
+    )
+
     try:
       return await service.update(reminder_id, payload)
     except Exception as exc:
@@ -129,7 +130,8 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     description="Mark a reminder as completed."
   )
   async def complete_reminder(reminder_id: str) -> Reminder:
-    service = app.state.reminder_service
+    service = cast(ReminderService, app.state.reminder_service)
+
     try:
       return await service.complete(reminder_id)
     except Exception as exc:
@@ -140,7 +142,8 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     description="Delete a reminder."
   )
   async def delete_reminder(reminder_id: str) -> dict[str, str]:
-    service = app.state.reminder_service
+    service = cast(ReminderService, app.state.reminder_service)
+
     try:
       return await service.delete(reminder_id)
     except Exception as exc:
@@ -162,20 +165,20 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     tags: list[str] | None = None,
     reminders: list[int] | None = None,
   ) -> Event:
-    service = app.state.event_service
-    payload_args = {
-      "title": title,
-      "start_datetime": start_datetime,
-      "end_datetime": end_datetime,
-      "description": description,
-      "location": location,
-      "attendees": attendees or [],
-      "tags": tags or [],
-    }
-    if reminders is not None:
-      payload_args["reminders"] = reminders
+    service = cast(EventService, app.state.event_service)
+
     try:
-      payload = EventCreate(**payload_args)
+      payload = EventCreate(
+        title=title,
+        start_datetime=start_datetime,
+        end_datetime=end_datetime,
+        description=description,
+        location=location,
+        attendees=attendees or [],
+        tags=tags or [],
+        reminders=reminders if reminders is not None else [15, 30, 60],
+      )
+
       return await service.create(payload)
     except Exception as exc:
       raise ToolError(str(exc))
@@ -186,7 +189,8 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     description="Retrieve detailed information about a specific event."
   )
   async def get_event(event_id: str) -> Event:
-    service = app.state.event_service
+    service = cast(EventService, app.state.event_service)
+
     try:
       return await service.get(event_id)
     except Exception as exc:
@@ -205,9 +209,10 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     limit: int = 100,
     offset: int = 0,
   ) -> list[Event]:
-    service = app.state.event_service
+    service = cast(EventService, app.state.event_service)
+
     try:
-      return await service.list(
+      return await service.list_events(
         status=status,
         start=start,
         end=end,
@@ -234,27 +239,20 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     reminders: list[int] | None = None,
     status: Literal["scheduled", "ongoing", "completed", "cancelled"] | None = None,
   ) -> Event:
-    service = app.state.event_service
-    update_data = {}
-    if title is not None:
-      update_data["title"] = title
-    if description is not None:
-      update_data["description"] = description
-    if start_datetime is not None:
-      update_data["start_datetime"] = start_datetime
-    if end_datetime is not None:
-      update_data["end_datetime"] = end_datetime
-    if location is not None:
-      update_data["location"] = location
-    if attendees is not None:
-      update_data["attendees"] = attendees
-    if tags is not None:
-      update_data["tags"] = tags
-    if reminders is not None:
-      update_data["reminders"] = reminders
-    if status is not None:
-      update_data["status"] = status
-    payload = EventUpdate(**update_data)
+    service = cast(EventService, app.state.event_service)
+
+    payload = EventUpdate(
+      title=title,
+      description=description,
+      start_datetime=start_datetime,
+      end_datetime=end_datetime,
+      location=location,
+      attendees=attendees,
+      tags=tags,
+      reminders=reminders,
+      status=status,
+    )
+
     try:
       return await service.update(event_id, payload)
     except Exception as exc:
@@ -265,7 +263,8 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     description="Delete a calendar event."
   )
   async def delete_event(event_id: str) -> dict[str, str]:
-    service = app.state.event_service
+    service = cast(EventService, app.state.event_service)
+
     try:
       return await service.delete(event_id)
     except Exception as exc:
@@ -285,9 +284,10 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     limit: int = 100,
     offset: int = 0,
   ) -> list[Notification]:
-    service = app.state.notification_service
+    service = cast(NotificationService, app.state.notification_service)
+
     try:
-      return await service.list(
+      return await service.list_notifications(
         type_=type,
         tags=tags or [],
         read_status=read_status,
@@ -303,7 +303,8 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     description="Get the number of unread notifications."
   )
   async def get_unread_count() -> dict[str, int]:
-    service = app.state.notification_service
+    service = cast(NotificationService, app.state.notification_service)
+
     try:
       return await service.unread_count()
     except Exception as exc:
@@ -314,7 +315,8 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     description="Mark a single notification as read."
   )
   async def mark_notification_read(notification_id: str) -> Notification:
-    service = app.state.notification_service
+    service = cast(NotificationService, app.state.notification_service)
+
     try:
       return await service.mark_read(notification_id)
     except Exception as exc:
@@ -325,7 +327,8 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     description="Mark all notifications as read, optionally filtered by tags."
   )
   async def mark_all_notifications_read(tags: list[str] | None = None) -> dict[str, int | str]:
-    service = app.state.notification_service
+    service = cast(NotificationService, app.state.notification_service)
+
     try:
       return await service.mark_all_read(tags)
     except Exception as exc:
@@ -341,7 +344,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
   async def list_caldav_accounts(active_only: bool = False) -> list[CalDAVAccount]:
     service = app.state.caldav_service
     try:
-      return await service.list_accounts(active_only=active_only)
+      return cast(list[CalDAVAccount], await service.list_accounts(active_only=active_only))
     except Exception as exc:
       raise ToolError(str(exc))
 
@@ -352,7 +355,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
   async def sync_event_to_caldav(event_id: str) -> list[CalDAVSyncResult]:
     service = app.state.caldav_service
     try:
-      return await service.sync_event(event_id)
+      return cast(list[CalDAVSyncResult], await service.sync_event(event_id))
     except Exception as exc:
       raise ToolError(str(exc))
 
@@ -363,6 +366,6 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
   async def sync_all_events_to_caldav(tags: list[str] | None = None) -> list[CalDAVSyncResult]:
     service = app.state.caldav_service
     try:
-      return await service.sync_events(tags)
+      return cast(list[CalDAVSyncResult], await service.sync_events(tags))
     except Exception as exc:
       raise ToolError(str(exc))

@@ -17,6 +17,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from isinmi.core.database import Database
 from isinmi.core.models import Event
@@ -31,7 +32,7 @@ class EventRepository:
     self.db = db
 
   async def create(self, event: Event) -> Event:
-    def _operation(session):
+    def _operation(session: Session) -> EventORM:
       record = EventORM(
         id=event.id,
         title=event.title,
@@ -53,13 +54,13 @@ class EventRepository:
     return Event.model_validate(record)
 
   async def get(self, event_id: str) -> Event | None:
-    def _operation(session):
+    def _operation(session: Session) -> EventORM | None:
       return session.get(EventORM, event_id)
 
     record = await self.db.run(_operation)
     return Event.model_validate(record) if record else None
 
-  async def list(
+  async def list_events(
     self,
     status: str | None = None,
     start: datetime | None = None,
@@ -68,7 +69,7 @@ class EventRepository:
     limit: int = 100,
     offset: int = 0,
   ) -> list[Event]:
-    def _operation(session):
+    def _operation(session: Session) -> list[EventORM]:
       stmt = select(EventORM)
 
       if status:
@@ -80,18 +81,21 @@ class EventRepository:
       if end is not None:
         stmt = stmt.where(EventORM.start_datetime <= end)
 
-      tag_filter = build_tags_filter(EventORM.tags, tags or [], session.bind.dialect.name)  # pyright: ignore
+      dialect_name = session.bind.dialect.name if session.bind is not None else "sqlite"
+      tag_filter = build_tags_filter(EventORM.tags, tags or [], dialect_name)  # pyright: ignore
+
       if tag_filter is not None:
         stmt = stmt.where(tag_filter)
 
       stmt = stmt.order_by(EventORM.start_datetime.asc()).limit(limit).offset(offset)
-      return session.scalars(stmt).all()
+
+      return list(session.scalars(stmt).all())
 
     rows = await self.db.run(_operation)
     return [Event.model_validate(row) for row in rows]
 
   async def update(self, event_id: str, changes: dict[str, object]) -> Event | None:
-    def _operation(session):
+    def _operation(session: Session) -> EventORM | None:
       record = session.get(EventORM, event_id)
 
       if record is None:
@@ -107,7 +111,7 @@ class EventRepository:
     return Event.model_validate(record) if record else None
 
   async def delete(self, event_id: str) -> bool:
-    def _operation(session):
+    def _operation(session: Session) -> bool:
       record = session.get(EventORM, event_id)
 
       if record is None:

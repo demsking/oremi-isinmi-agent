@@ -18,6 +18,7 @@ from datetime import datetime
 from datetime import timedelta
 
 import pytest
+from pydantic import SecretStr
 from pydantic import ValidationError
 
 from isinmi.core.app import log_startup_settings
@@ -29,17 +30,17 @@ from isinmi.core.settings import Settings
 
 def test_settings_requires_long_encryption_key() -> None:
   with pytest.raises(ValidationError):
-    Settings(database_encryption_key="too-short")
+    Settings(database_encryption_key=SecretStr("too-short"))
 
 
 def test_log_level_is_normalized() -> None:
-  settings = Settings(database_encryption_key="x" * 32, log_level="DEBUG")
+  settings = Settings(database_encryption_key=SecretStr("x" * 32), log_level="DEBUG")
   assert settings.log_level == "DEBUG"
 
 
 def test_startup_logs_every_setting_without_exposing_secrets(caplog: pytest.LogCaptureFixture) -> None:
   secret = "secret-value-that-must-never-be-logged"
-  settings = Settings(database_encryption_key=secret)
+  settings = Settings(database_encryption_key=SecretStr(secret))
 
   with caplog.at_level(logging.INFO, logger="isinmi.core.app"):
     log_startup_settings(settings)
@@ -53,7 +54,12 @@ def test_startup_logs_every_setting_without_exposing_secrets(caplog: pytest.LogC
 
 
 def test_tags_are_normalized_and_deduplicated() -> None:
-  reminder = ReminderCreate(title="Call the dentist", datetime=datetime.now(), tags=[" Work ", "work", "URGENT"])
+  reminder = ReminderCreate(
+    title="Call the dentist",
+    description=None,
+    datetime=datetime.now(),
+    tags=[" Work ", "work", "URGENT"],
+  )
   assert reminder.tags == ["work", "urgent"]
 
 
@@ -69,4 +75,10 @@ def test_agent_chat_request_accepts_client_grouping_tags() -> None:
 def test_event_end_must_be_after_start() -> None:
   start = datetime.now()
   with pytest.raises(ValidationError):
-    EventCreate(title="Bad event", start_datetime=start, end_datetime=start - timedelta(minutes=1))
+    EventCreate(
+      title="Bad event",
+      description=None,
+      location=None,
+      start_datetime=start,
+      end_datetime=start - timedelta(minutes=1),
+    )
