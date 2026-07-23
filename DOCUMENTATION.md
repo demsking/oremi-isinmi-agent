@@ -13,21 +13,21 @@ Project repository: https://gitlab.com/demsking/oremi-isinmi
 In Yorùbá culture, _Oremi_ means "my friend" and _Isinmi_ means "rest" or
 "appointment." Together, they represent a friendly companion that helps you find
 peace of mind by keeping your commitments organized and your time well-managed.
-This agent embodies that philosophy by offering:
+This subsystem embodies that philosophy by offering:
 
-- **Natural Language Interaction**: Simply tell the agent what you need, and it understands
+- **REST API & MCP Interface**: Seamless management via HTTP endpoints and Model Context Protocol
 - **Smart Organization**: Use tags to group and filter records by device, UUID, source, user, or workflow
 - **Privacy First**: Everything stays on your device with encrypted local storage
-- **Real-time Notifications**: Stay informed with Server-Sent Events for reminders and events
-- **Natural Language Understanding**: Converts conversational requests into structured actions
+- **Real-time Notifications**: Stay informed with Server-Sent Events (SSE) for reminders and events
+- **Remote Synchronization**: Synchronize calendar events with CalDAV servers
 
 ## Core Capabilities
 
-- **Intelligent Reminder Management**: Create, update, and track reminders with natural language
-- **Smart Event Scheduling**: Plan events with automatic reminder generation
-- **Tag-Based Organization**: Filter and find items instantly using client grouping tags stored on reminders, events, and notifications
-- **Real-time Notifications**: SSE streaming for immediate updates
-- **AI Conversation**: Chat with the agent to manage your schedule
+- **Reminder Management**: Create, update, list, complete, and delete encrypted reminders
+- **Event Scheduling**: Plan calendar events with automated notifications and CalDAV sync
+- **Tag-Based Organization**: Filter and find items using client grouping tags on reminders, events, and notifications
+- **Real-time Notifications**: Server-Sent Events (SSE) streaming for immediate updates
+- **Model Context Protocol (MCP)**: Expose tools, resources, and prompts for AI integrations
 - **Encrypted Storage**: SQLAlchemy ORM with SQLCipher-backed SQLite and support for other SQL databases
 - **Lightweight Deployment**: Alpine-based [Docker image](https://hub.docker.com/r/demsking/oremi-isinmi) for minimal resource usage
 
@@ -35,7 +35,7 @@ This agent embodies that philosophy by offering:
 
 Tags are free-form client grouping keys used to organize and filter records
 across the application. They are stored as normalized JSON arrays and can be
-attached to reminders, events, notifications, and chat requests.
+attached to reminders, events, and notifications.
 
 Use tags when you want to group records by values such as:
 
@@ -45,15 +45,16 @@ Use tags when you want to group records by values such as:
 
 Tag-filtered endpoints match every requested tag, so
 `?tags=device_id:iphone-14,user_id:alex` returns only records that carry both
-tags. The `/agent/chat` endpoint also accepts optional tags so a client can
-group the conversation itself and any reminder created from it.
+tags. Optional tags can also be passed when creating reminders, scheduling
+events, or managing notifications so clients can group records by client,
+device, or workflow.
 
 ## Use Cases
 
-- **Personal Time Management**: "Remind me to call the dentist tomorrow at 2pm"
-- **Event Planning**: "Schedule a team meeting for Friday at 10am, tag it as 'work'"
-- **Information Retrieval**: "Show me all my personal reminders for next week"
-- **Tag Organization**: "List all events tagged as 'urgent' and 'work'"
+- **Reminder Management**: Create, list, update, and complete reminders via REST API or MCP tools
+- **Event Scheduling**: Book calendar events, manage attendees, and sync with CalDAV targets
+- **Information Retrieval**: Query reminders and notifications using status, date range, or tag filters
+- **Tag Filtering**: Group and retrieve records tagged by device, user, or workflow identifier
 
 ## Security & Privacy
 
@@ -99,7 +100,7 @@ docker run -d \
 ```
 
 Replace `<path_to_env_file>` with the path to your
-[environment variables](#description/environment-variables) file containing the
+[environment variables](#environment-variables) file containing the
 necessary configurations.
 
 ### Deploy with Docker Compose
@@ -141,8 +142,8 @@ the environment or a `.env` file in the working directory.
 
 ### Application and Server Settings
 
-- `OREMI_ISINMI_SERVER_HOST`: Optional. Defaults to `0.0.0.0`. Host interface used by
-  the Oremi Isinmi server.
+- `OREMI_ISINMI_SERVER_HOST`: Optional. Defaults to `127.0.0.1` (`0.0.0.0` in
+  Docker image). Host interface used by the Oremi Isinmi server.
 - `OREMI_ISINMI_SERVER_PORT`: Optional. Defaults to `5073`. Port used by the
   Oremi Isinmi server.
 - `OREMI_ISINMI_API_PREFIX`: Optional. Defaults to `/`. Prefix for all API
@@ -151,8 +152,9 @@ the environment or a `.env` file in the working directory.
 ### Database Settings
 
 - `OREMI_ISINMI_DATABASE_URL`: Optional. Defaults to
-  `sqlite:///./oremi_isinmi.db`. Use `sqlite:///` for SQLCipher-backed local
-  storage, or point the ORM at a supported PostgreSQL, MariaDB, or MySQL URL.
+  `sqlite:///./oremi_isinmi.db` (`sqlite:////oremi/data/oremi_isinmi.db` in
+  Docker image). Use `sqlite:///` for SQLCipher-backed local storage, or point
+  the ORM at a supported PostgreSQL, MariaDB, or MySQL URL.
 - `OREMI_ISINMI_DATABASE_ENCRYPTION_KEY`: **Required**. No default. SQLCipher
   encryption key for SQLite storage. Must be at least 32 characters long.
 
@@ -254,7 +256,7 @@ The server provides a rich catalog of strongly-typed tools representing scheduli
 
 #### Reminder Management
 
-- `create_reminder`: Schedule a new encrypted reminder with natural language-oriented metadata and tags.
+- `create_reminder`: Schedule a new encrypted reminder with metadata and tags.
 - `list_reminders`: Retrieve reminders matching filters (status, tags, datetime range, upcoming).
 - `update_reminder`: Update fields of an existing reminder.
 - `complete_reminder`: Mark a reminder as completed.
@@ -327,11 +329,17 @@ tests, code style guidelines, and the pull request process, please refer to
 
 ## Versioning
 
-Oremi Ojọ follows [Semantic Versioning](https://semver.org/). Display the
-installed version with:
+Oremi Isinmi follows [Semantic Versioning](https://semver.org/). Check the
+installed application version via the `/health` endpoint:
 
 ```bash
-oremi-isinmi --version
+curl http://localhost:5073/health
+```
+
+or via Python:
+
+```bash
+python -c "import isinmi; print(isinmi.__version__)"
 ```
 
 ## License
