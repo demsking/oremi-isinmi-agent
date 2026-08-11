@@ -1,6 +1,6 @@
 [project]
 name = "oremi-isinmi"
-version = "1.0.0b5"
+version = "1.0.0b6"
 description = "Encrypted reminders, scheduling, tags, SSE and MCP."
 authors = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
 maintainers = [{ name = "Sébastien Demanou", email = "demsking@gmail.com" }]
@@ -62,6 +62,7 @@ dev = [
   "pytest>=9.1.1",
   "pytest-asyncio>=1.0.0",
   "ruff>=0.12.0",
+  "twine>=7.0.0",
 ]
 
 [build-system]
