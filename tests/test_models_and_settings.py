@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 """Model and settings tests."""
-import logging
 from datetime import datetime
 from datetime import timedelta
 
@@ -21,7 +20,6 @@ import pytest
 from pydantic import SecretStr
 from pydantic import ValidationError
 
-from isinmi.core.app import log_startup_settings
 from isinmi.core.models import AgentChatRequest
 from isinmi.core.models import EventCreate
 from isinmi.core.models import ReminderCreate
@@ -36,21 +34,6 @@ def test_settings_requires_long_encryption_key() -> None:
 def test_log_level_is_normalized() -> None:
   settings = Settings(database_encryption_key=SecretStr("x" * 32), log_level="DEBUG")
   assert settings.log_level == "DEBUG"
-
-
-def test_startup_logs_every_setting_without_exposing_secrets(caplog: pytest.LogCaptureFixture) -> None:
-  secret = "secret-value-that-must-never-be-logged"
-  settings = Settings(database_encryption_key=SecretStr(secret))
-
-  with caplog.at_level(logging.INFO, logger="isinmi.core.app"):
-    log_startup_settings(settings)
-
-  output = caplog.text
-  for name in Settings.model_fields:
-    assert f"Setting {name}:" in output
-
-  assert "Setting database_encryption_key: [set]" in output
-  assert secret not in output
 
 
 def test_tags_are_normalized_and_deduplicated() -> None:

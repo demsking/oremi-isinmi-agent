@@ -17,8 +17,8 @@ from typing import cast
 from typing import Literal
 
 from fastapi import FastAPI
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 
 from isinmi.core.models import Event
@@ -33,18 +33,15 @@ from isinmi.services.notification_service import NotificationService
 from isinmi.services.reminder_service import ReminderService
 
 
-READ_ONLY = ToolAnnotations(readOnlyHint=True, idempotentHint=True)
+READ_ONLY = ToolAnnotations(read_only_hint=True, idempotent_hint=True)
 
 
-def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
+def register_mcp_tools(mcp: MCPServer, app: FastAPI) -> None:
   """Register MCP tools that expose reminder, event, and notification operations."""
 
   # --- Reminders Tools ---
 
-  @mcp.tool(
-    title="Create Reminder",
-    description="Create a new reminder."
-  )
+  @mcp.tool(title="Create Reminder", description="Create a new reminder.")
   async def create_reminder(
     title: str,
     datetime: DateTime,
@@ -66,11 +63,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool(
-    annotations=READ_ONLY,
-    title="List Reminders",
-    description="List reminders with optional filters."
-  )
+  @mcp.tool(annotations=READ_ONLY, title="List Reminders", description="List reminders with optional filters.")
   async def list_reminders(
     status: Literal["pending", "completed", "dismissed"] | None = None,
     start: DateTime | None = None,
@@ -95,10 +88,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool(
-    title="Update Reminder",
-    description="Update an existing reminder."
-  )
+  @mcp.tool(title="Update Reminder", description="Update an existing reminder.")
   async def update_reminder(
     reminder_id: str,
     title: str | None = None,
@@ -123,10 +113,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool(
-    title="Complete Reminder",
-    description="Mark a reminder as completed."
-  )
+  @mcp.tool(title="Complete Reminder", description="Mark a reminder as completed.")
   async def complete_reminder(reminder_id: str) -> Reminder:
     service = cast(ReminderService, app.state.reminder_service)
 
@@ -135,10 +122,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool(
-    title="Delete Reminder",
-    description="Delete a reminder."
-  )
+  @mcp.tool(title="Delete Reminder", description="Delete a reminder.")
   async def delete_reminder(reminder_id: str) -> dict[str, str]:
     service = cast(ReminderService, app.state.reminder_service)
 
@@ -149,10 +133,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
 
   # --- Events Tools ---
 
-  @mcp.tool(
-    title="Create Event",
-    description="Create a new calendar event."
-  )
+  @mcp.tool(title="Create Event", description="Create a new calendar event.")
   async def create_event(
     title: str,
     start_datetime: DateTime,
@@ -181,11 +162,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool(
-    annotations=READ_ONLY,
-    title="Get Event",
-    description="Retrieve detailed information about a specific event."
-  )
+  @mcp.tool(annotations=READ_ONLY, title="Get Event", description="Retrieve detailed information about a specific event.")
   async def get_event(event_id: str) -> Event:
     service = cast(EventService, app.state.event_service)
 
@@ -194,11 +171,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool(
-    annotations=READ_ONLY,
-    title="List Events",
-    description="List calendar events with optional filters."
-  )
+  @mcp.tool(annotations=READ_ONLY, title="List Events", description="List calendar events with optional filters.")
   async def list_events(
     status: Literal["scheduled", "ongoing", "completed", "cancelled"] | None = None,
     start: DateTime | None = None,
@@ -221,10 +194,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool(
-    title="Update Event",
-    description="Update an existing event."
-  )
+  @mcp.tool(title="Update Event", description="Update an existing event.")
   async def update_event(
     event_id: str,
     title: str | None = None,
@@ -256,10 +226,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool(
-    title="Delete Event",
-    description="Delete a calendar event."
-  )
+  @mcp.tool(title="Delete Event", description="Delete a calendar event.")
   async def delete_event(event_id: str) -> dict[str, str]:
     service = cast(EventService, app.state.event_service)
 
@@ -270,11 +237,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
 
   # --- Notifications Tools ---
 
-  @mcp.tool(
-    annotations=READ_ONLY,
-    title="List Notifications",
-    description="List notification messages with optional filters."
-  )
+  @mcp.tool(annotations=READ_ONLY, title="List Notifications", description="List notification messages with optional filters.")
   async def list_notifications(
     type: Literal["reminder", "event"] | None = None,
     tags: list[str] | None = None,
@@ -295,11 +258,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool(
-    annotations=READ_ONLY,
-    title="Get Unread Count",
-    description="Get the number of unread notifications."
-  )
+  @mcp.tool(annotations=READ_ONLY, title="Get Unread Count", description="Get the number of unread notifications.")
   async def get_unread_count() -> dict[str, int]:
     service = cast(NotificationService, app.state.notification_service)
 
@@ -308,10 +267,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool(
-    title="Mark Notification Read",
-    description="Mark a single notification as read."
-  )
+  @mcp.tool(title="Mark Notification Read", description="Mark a single notification as read.")
   async def mark_notification_read(notification_id: str) -> Notification:
     service = cast(NotificationService, app.state.notification_service)
 
@@ -320,10 +276,7 @@ def register_mcp_tools(mcp: FastMCP, app: FastAPI) -> None:
     except Exception as exc:
       raise ToolError(str(exc))
 
-  @mcp.tool(
-    title="Mark All Notifications Read",
-    description="Mark all notifications as read, optionally filtered by tags."
-  )
+  @mcp.tool(title="Mark All Notifications Read", description="Mark all notifications as read, optionally filtered by tags.")
   async def mark_all_notifications_read(tags: list[str] | None = None) -> dict[str, int | str]:
     service = cast(NotificationService, app.state.notification_service)
 

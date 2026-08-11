@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import logging
 from functools import lru_cache
+from typing import Any
 from typing import Literal
 
 from pydantic import Field
@@ -21,6 +23,8 @@ from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 from sqlalchemy.engine import make_url
+
+logger = logging.Logger(__name__)
 
 
 class Settings(BaseSettings):
@@ -88,3 +92,27 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
   """Return cached application settings."""
   return Settings(database_encryption_key=SecretStr("0" * 32))  # pyright: ignore
+
+
+def _format(value: Any) -> str:
+  if value is None:
+    return "None"
+
+  if isinstance(value, SecretStr):
+    return "[set]"
+
+  if isinstance(value, list):
+    return ",".join(str(item) for item in value)
+
+  return str(value)
+
+
+def log_group(settings: Settings, name: str, *fields: str) -> None:
+  """Log a group of related settings."""
+  values: list[str] = []
+
+  for field in fields:
+    value = getattr(settings, field)
+    values.append(f"{field}={_format(value)}")
+
+  logger.info("%s Settings: %s", name, " ".join(values))

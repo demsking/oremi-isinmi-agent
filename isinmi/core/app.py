@@ -20,7 +20,7 @@ from fastapi import FastAPI
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 from fastapi.responses import JSONResponse
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 
 from isinmi.api import caldav
 from isinmi.api import docs
@@ -33,6 +33,7 @@ from isinmi.core.package import APP_DOCUMENTATION_URL
 from isinmi.core.package import APP_NAME
 from isinmi.core.package import APP_VERSION
 from isinmi.core.settings import get_settings
+from isinmi.core.settings import log_group
 from isinmi.core.settings import Settings
 from isinmi.integrations.caldav.service import CalDAVSyncService
 from isinmi.mcp.prompts import register_mcp_prompts
@@ -51,14 +52,6 @@ from isinmi.utils.logger import configure_logging
 logger = logging.getLogger(__name__)
 
 
-def log_startup_settings(settings: Settings) -> None:
-  """Log every configured application setting without exposing secrets."""
-  for name in settings.__class__.model_fields:
-    value = getattr(settings, name)
-    display_value = "[set]" if name == "database_encryption_key" else value
-    logger.info("Setting %s: %s", name, display_value)
-
-
 def create_app(settings: Settings | None = None) -> FastAPI:
   """Build the FastAPI application."""
 
@@ -68,7 +61,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
   @asynccontextmanager
   async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info(f"{APP_NAME} v{APP_VERSION}")
-    log_startup_settings(resolved_settings)
+    log_group(resolved_settings, "Server", "server_host", "server_port", "api_prefix")
+    log_group(resolved_settings, "CalDAV", "caldav_request_timeout_seconds", "sse_retry_timeout_seconds")
+    log_group(resolved_settings, "Database", "database_url", "database_encryption_key")
+    log_group(resolved_settings, "Logging", "log_level", "log_file")
 
     db = Database(resolved_settings)
 
@@ -123,14 +119,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     ],
   )
 
-  mcp = FastMCP(
+  mcp = MCPServer(
     name="Oremi Isinmi",
     instructions=(
       "Expose AI-agent facing tools, resources, and prompts for reminders, events, notifications and calendar synchronization."
     ),
-    stateless_http=True,
-    json_response=True,
-    streamable_http_path="/mcp",
     website_url=APP_DOCUMENTATION_URL,
   )
 
@@ -141,7 +134,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
   @app.get("/", include_in_schema=False)
   async def redirect_to_docs() -> HTMLResponse:
-    return HTMLResponse(status_code=307, headers={"Location": prefix + docs.router.prefix})
+    return HTMLResponse(status_code=307, headers={"Location": prefix + docs.router.prefix + "/"})
 
   prefix = "" if resolved_settings.api_prefix == "/" else resolved_settings.api_prefix
   api_prefix = f"{prefix}/api"
@@ -153,7 +146,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
   app.include_router(health.router, prefix=prefix)
   app.include_router(docs.router, prefix=prefix)
 
-  app.mount(resolved_settings.api_prefix, mcp.streamable_http_app(), name="mcp")
+  app.mount(
+    resolved_settings.api_prefix,
+    mcp.streamable_http_app(
+      stateless_http=True,
+      json_response=True,
+      streamable_http_path="/mcp",
+    ),
+    name="mcp",
+  )
 
   register_mcp_tools(mcp, app)
   register_mcp_resources(mcp, app)

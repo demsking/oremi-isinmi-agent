@@ -15,8 +15,8 @@
 from typing import cast
 
 from fastapi import FastAPI
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from sqlalchemy.orm import Session
 
 from isinmi.core.models import Event
@@ -28,7 +28,7 @@ from isinmi.services.notification_service import NotificationService
 from isinmi.services.reminder_service import ReminderService
 
 
-def register_mcp_resources(mcp: FastMCP, app: FastAPI) -> None:
+def register_mcp_resources(mcp: MCPServer, app: FastAPI) -> None:
   """Register MCP resources for accessing reminder, event, and notification data directly."""
 
   @mcp.resource(
