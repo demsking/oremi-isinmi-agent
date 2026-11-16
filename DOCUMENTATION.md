@@ -311,7 +311,7 @@ The server publishes high-level prompt templates to guide AI agents in multi-ste
 - `reminder_suggestions`: Contextual reminder templates.
 - `morning_briefing`: Daily overview of agenda, active reminders, and overdue items.
 
-## Contributing
+## Development
 
 Oremi Isinmi is built with Python and uses `uv` for dependency management. The
 project follows standard Python development practices with type hints, linting,
