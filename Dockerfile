@@ -42,6 +42,7 @@ ENV PATH="/oremi/.venv/bin:$PATH"
 ENV PYTHONPATH="/oremi:/oremi/.venv/lib/python3.12/site-packages"
 
 ENV OREMI_ISINMI_SERVER_HOST=0.0.0.0
+ENV OREMI_ISINMI_SERVER_PORT=5073
 ENV OREMI_ISINMI_DATABASE_URL=sqlite:////oremi/data/oremi_isinmi.db
 
 USER oremi
@@ -50,7 +51,11 @@ VOLUME /oremi/data
 
 EXPOSE 5073
 
+# The port fallback must stay in sync with EXPOSE, the ENV above, and the
+# Settings.server_port default. Without it, an unset OREMI_ISINMI_SERVER_PORT
+# expands to an empty string and the URL becomes "http://127.0.0.1:/health/"
+# (port 80), so Docker Swarm marks every task unhealthy and restarts it.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD python -c "import urllib.request; prefix='${OREMI_ISINMI_API_PREFIX}'.strip('/'); url=f'http://localhost:${OREMI_ISINMI_SERVER_PORT}/' + (prefix + '/' if prefix else '') + 'health/'; urllib.request.urlopen(url)" || exit 1
+  CMD python -c "import urllib.request; prefix='${OREMI_ISINMI_API_PREFIX}'.strip('/'); url=f'http://127.0.0.1:${OREMI_ISINMI_SERVER_PORT:-5073}/' + (prefix + '/' if prefix else '') + 'health/'; urllib.request.urlopen(url)" || exit 1
 
 CMD ["python", "/oremi/isinmi"]

@@ -24,7 +24,7 @@ from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 from sqlalchemy.engine import make_url
 
-logger = logging.Logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
