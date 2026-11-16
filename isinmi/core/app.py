@@ -152,6 +152,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
       stateless_http=True,
       json_response=True,
       streamable_http_path="/mcp",
+      host=resolved_settings.server_host,
     ),
     name="mcp",
   )

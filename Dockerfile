@@ -27,7 +27,7 @@ FROM python:3.12-alpine3.21
 SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 
 RUN apk add --no-cache libffi openssl sqlite sqlcipher
-RUN adduser -D -h /oremi oremi && mkdir -p /oremi/data
+RUN adduser -D -h /oremi oremi && mkdir -p /oremi/data && chown oremi:oremi /oremi/data
 
 WORKDIR /oremi
 
