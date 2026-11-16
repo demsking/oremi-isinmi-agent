@@ -43,6 +43,7 @@ ENV PYTHONPATH="/oremi:/oremi/.venv/lib/python3.12/site-packages"
 
 ENV OREMI_ISINMI_SERVER_HOST=0.0.0.0
 ENV OREMI_ISINMI_SERVER_PORT=5073
+ENV OREMI_ISINMI_API_PREFIX=/
 ENV OREMI_ISINMI_DATABASE_URL=sqlite:////oremi/data/oremi_isinmi.db
 
 USER oremi
